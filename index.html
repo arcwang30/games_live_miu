@@ -9,7 +9,44 @@
   <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
   <meta name="theme-color" content="#0d1240">
   <title>子彈喵喵</title>
-  <link rel="stylesheet" href="styles/main.css">
+
+  <!-- 啟動診斷：檔案載入失敗 / 程式錯誤 / 檔案內容缺少 / 版本不一致時，直接在畫面上顯示原因，
+       避免遊戲默默卡住。版本號要和 src/core/config.js 的 VERSION 以及下面每個 ?v= 一起更新。 -->
+  <script>
+    window.BM_INDEX_VERSION = '2026.09.21b';
+    (function () {
+      var problems = [], box = null;
+      function render() {
+        if (!box) {
+          box = document.createElement('div');
+          box.style.cssText = 'position:fixed;left:0;right:0;top:0;z-index:99999;background:rgba(150,20,40,.96);color:#fff;' +
+            'font:14px/1.7 "Microsoft JhengHei",sans-serif;padding:12px 14px;white-space:pre-wrap;max-height:70%;overflow:auto;cursor:pointer;touch-action:auto';
+          box.onclick = function () { box.style.display = 'none'; };
+          document.documentElement.appendChild(box);
+        }
+        box.style.display = 'block';
+        box.textContent = '⚠ 遊戲載入不完整\n' + problems.join('\n') +
+          '\n\n請確認上面的檔案都已上傳到 git 並在網站上找得到，然後按 Ctrl+F5 強制重新整理（手機：清除網站快取後重新整理）。\n（點一下可關閉這則訊息）';
+      }
+      window.__bootAdd = function (text, key) {
+        for (var i = 0; i < problems.length; i++) if (key && problems[i].indexOf(key) >= 0) return;   // 同一個檔案只報一次
+        problems.push(text);
+        render();
+      };
+      // capture 階段才抓得到 <script> 載入失敗（例如檔案沒上傳，404）
+      window.addEventListener('error', function (e) {
+        var t = e.target;
+        if (t && t !== window && (t.tagName === 'SCRIPT' || t.tagName === 'LINK')) {
+          var src = (t.getAttribute('src') || t.getAttribute('href') || '').split('?')[0];
+          window.__bootAdd('• 載入失敗：' + src, src);
+        } else if (e.message) {
+          var f = (e.filename || '').split('?')[0].split('/').slice(-3).join('/');
+          window.__bootAdd('• 程式錯誤：' + e.message + (f ? '（' + f + ':' + e.lineno + '）' : ''), e.message);
+        }
+      }, true);
+    })();
+  </script>
+  <link rel="stylesheet" href="styles/main.css?v=2026.09.21b">
 </head>
 <body>
   <div id="stage">
@@ -17,30 +54,55 @@
   </div>
   <noscript>請開啟瀏覽器的 JavaScript 才能遊玩《子彈喵喵》。</noscript>
 
-  <!-- 使用一般 script（非 ES module），這樣直接雙擊 index.html（file://）也能執行 -->
-  <script src="src/core/config.js"></script>
-  <script src="src/utils/math.js"></script>
-  <script src="src/utils/draw.js"></script>
-  <script src="src/utils/storage.js"></script>
-  <script src="src/core/input.js"></script>
-  <script src="src/core/touch.js"></script>
-  <script src="src/core/audio.js"></script>
-  <script src="src/ui/sprites.js"></script>
-  <script src="src/ui/background.js"></script>
-  <script src="src/ui/hud.js"></script>
-  <script src="src/entities/particle.js"></script>
-  <script src="src/entities/bullet.js"></script>
-  <script src="src/entities/jetfx.js"></script>
-  <script src="src/entities/player.js"></script>
-  <script src="src/systems/formation.js"></script>
-  <script src="src/systems/ai.js"></script>
-  <script src="src/entities/enemy.js"></script>
-  <script src="src/entities/boss.js"></script>
-  <script src="src/systems/waves.js"></script>
-  <script src="src/scenes/menu-scene.js"></script>
-  <script src="src/scenes/gameover-scene.js"></script>
-  <script src="src/scenes/play-scene.js"></script>
-  <script src="src/core/game.js"></script>
-  <script src="src/main.js"></script>
+  <!-- 使用一般 script（非 ES module），這樣直接雙擊 index.html（file://）也能執行。
+       ?v= 是版本號：更新版本後瀏覽器會重新下載，不會拿到舊的快取檔案而造成新舊混在一起 -->
+  <script src="src/core/config.js?v=2026.09.21b"></script>
+  <script src="src/utils/math.js?v=2026.09.21b"></script>
+  <script src="src/utils/draw.js?v=2026.09.21b"></script>
+  <script src="src/utils/storage.js?v=2026.09.21b"></script>
+  <script src="src/core/input.js?v=2026.09.21b"></script>
+  <script src="src/core/touch.js?v=2026.09.21b"></script>
+  <script src="src/core/audio.js?v=2026.09.21b"></script>
+  <script src="src/ui/sprites.js?v=2026.09.21b"></script>
+  <script src="src/ui/background.js?v=2026.09.21b"></script>
+  <script src="src/ui/hud.js?v=2026.09.21b"></script>
+  <script src="src/entities/particle.js?v=2026.09.21b"></script>
+  <script src="src/entities/bullet.js?v=2026.09.21b"></script>
+  <script src="src/entities/jetfx.js?v=2026.09.21b"></script>
+  <script src="src/entities/player.js?v=2026.09.21b"></script>
+  <script src="src/systems/formation.js?v=2026.09.21b"></script>
+  <script src="src/systems/ai.js?v=2026.09.21b"></script>
+  <script src="src/systems/entrance.js?v=2026.09.21b"></script>
+  <script src="src/entities/enemy.js?v=2026.09.21b"></script>
+  <script src="src/entities/boss.js?v=2026.09.21b"></script>
+  <script src="src/systems/waves.js?v=2026.09.21b"></script>
+  <script src="src/scenes/menu-scene.js?v=2026.09.21b"></script>
+  <script src="src/scenes/gameover-scene.js?v=2026.09.21b"></script>
+  <script src="src/scenes/play-scene.js?v=2026.09.21b"></script>
+  <script src="src/core/game.js?v=2026.09.21b"></script>
+  <script src="src/main.js?v=2026.09.21b"></script>
+
+  <!-- 載入完成後檢查：每個模組都在嗎？版本一致嗎？ -->
+  <script>
+    (function () {
+      var BM = window.BM || {};
+      var need = {
+        CONFIG: 'src/core/config.js', M: 'src/utils/math.js', Draw: 'src/utils/draw.js', Storage: 'src/utils/storage.js',
+        Input: 'src/core/input.js', Touch: 'src/core/touch.js', Audio: 'src/core/audio.js',
+        Sprites: 'src/ui/sprites.js', Background: 'src/ui/background.js', HUD: 'src/ui/hud.js',
+        Particles: 'src/entities/particle.js', PlayerBullet: 'src/entities/bullet.js', JetFx: 'src/entities/jetfx.js',
+        Player: 'src/entities/player.js', Formation: 'src/systems/formation.js', AI: 'src/systems/ai.js',
+        Entrance: 'src/systems/entrance.js', Enemy: 'src/entities/enemy.js', Boss: 'src/entities/boss.js',
+        Waves: 'src/systems/waves.js', Director: 'src/systems/waves.js',
+        MenuScene: 'src/scenes/menu-scene.js', GameOverScene: 'src/scenes/gameover-scene.js', PlayScene: 'src/scenes/play-scene.js',
+        Game: 'src/core/game.js'
+      };
+      for (var k in need) if (!BM[k]) window.__bootAdd('• 缺少內容：' + need[k] + '（' + k + '）', need[k]);
+      if (BM.CONFIG && BM.CONFIG.VERSION !== window.BM_INDEX_VERSION) {
+        window.__bootAdd('• 版本不一致：index.html 是 ' + window.BM_INDEX_VERSION + '，config.js 是 ' + BM.CONFIG.VERSION +
+          '（表示有檔案沒更新到，請把「這次異動的所有檔案」都上傳）', '版本不一致');
+      }
+    })();
+  </script>
 </body>
 </html>
