@@ -26,8 +26,16 @@
     }
     exit() {}
 
-    // 主選單主角的位置與大小
-    heroY(t) { return 410 + Math.sin(t * 2.4) * 10; }
+    // 主選單主角：在畫面中央左右來回飄移（±110px）、上下輕微起伏，機身依移動方向傾斜
+    hero(t) {
+      const A = 110, w = 0.85;
+      return {
+        x: W / 2 + Math.sin(t * w) * A,
+        y: 410 + Math.sin(t * 1.7) * 14,
+        rot: Math.cos(t * w) * 0.22,          // 往右飛時向右傾、往左飛時向左傾
+        vx: Math.cos(t * w) * A * w           // 水平速度（粒子尾跡用）
+      };
+    }
 
     btnY(i) { return BTN.y0 + i * BTN.gap; }
 
@@ -46,8 +54,12 @@
       }
       const P = I.pressed;
 
-      const info = BM.Sprites.player, hy = this.heroY(this.t), hs = 2 * info.scale;
-      this.jet.update(dt, info.nozzles.map(n => ({ x: W / 2 + n.x * hs, y: hy + n.y * hs })), 0, 0, this.mode === 'main');
+      const info = BM.Sprites.player, h = this.hero(this.t), hs = 2 * info.scale;
+      const cs = Math.cos(h.rot), sn = Math.sin(h.rot);
+      this.jet.update(dt, info.nozzles.map(n => {          // 噴射口跟著機身傾斜旋轉
+        const nx = n.x * hs, ny = n.y * hs;
+        return { x: h.x + nx * cs - ny * sn, y: h.y + nx * sn + ny * cs };
+      }), h.vx, 0, this.mode === 'main');
 
       if (this.mode !== 'main') {
         if (P.confirm || P.back || I.click) { this.mode = 'main'; BM.Audio.sfx('move'); }
@@ -92,12 +104,12 @@
       D.text(ctx, 'B U L L E T   M E O W', W / 2, 282, { size: 22, align: 'center', color: '#bcd0ff', stroke: '#1b1240', strokeW: 4, family: D.NUM, weight: '900' });
 
       // 主角
-      const hy = this.heroY(t), hs = 2 * BM.Sprites.player.scale;
+      const h = this.hero(t), hs = 2 * BM.Sprites.player.scale;
       this.jet.draw(ctx, 1, hs);
-      BM.Sprites.draw(ctx, 'cat', W / 2, hy, 0, hs);
-      const p = (t * 0.9) % 1;                       // 小魚子彈裝飾
-      BM.Sprites.draw(ctx, 'fish', W / 2 - 24, hy - 80 - p * 100, 0, 1.4, 1 - p);
-      BM.Sprites.draw(ctx, 'fish', W / 2 + 24, hy - 80 - ((p + 0.5) % 1) * 100, 0, 1.4, 1 - ((p + 0.5) % 1));
+      BM.Sprites.draw(ctx, 'cat', h.x, h.y, h.rot, hs);
+      const p = (t * 0.9) % 1;                       // 小魚子彈裝飾（從機頭往上發射）
+      BM.Sprites.draw(ctx, 'fish', h.x - 24, h.y - 80 - p * 100, 0, 1.4, 1 - p);
+      BM.Sprites.draw(ctx, 'fish', h.x + 24, h.y - 80 - ((p + 0.5) % 1) * 100, 0, 1.4, 1 - ((p + 0.5) % 1));
 
       for (let i = 0; i < ITEMS.length; i++) {
         D.button(ctx, ITEMS[i], W / 2, this.btnY(i), BTN.w, BTN.h, i === this.idx, t);

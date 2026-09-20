@@ -1,4 +1,4 @@
-// 遊戲主場景：一波 75 隻老鼠（15×5）→ 清光進下一波 → 玩家全數陣亡則結算
+// 遊戲主場景：一波一群老鼠（數量隨波數增加）→ 清光進下一波；每 3 波換 BOSS → 玩家全數陣亡則結算
 (function (BM) {
   const C = BM.CONFIG, W = C.W, H = C.H, M = BM.M, D = BM.Draw, I = BM.Input;
   const PAUSE_ITEMS = ['繼續遊戲', '回主選單'];
@@ -53,7 +53,9 @@
       if (this.wave % C.BOSS.EVERY === 0) { this.startBossWave(); return; }   // 每 3 波出現一次 BOSS
 
       this.boss = null;
-      this.enemies = BM.Waves.spawn();
+      // 一般波的序號（BOSS 波不計入）：第 1、2、4、5、7、8… 波依序是第 1、2、3、4、5、6… 個一般波
+      this.normalWave = this.wave - Math.floor(this.wave / C.BOSS.EVERY);
+      this.enemies = BM.Waves.spawn(this.normalWave);
       this.director = new BM.Director();
       this.state = 'playing';
       this.banner = { text: this.wave === 1 ? 'READY!' : 'WAVE ' + this.wave, sub: this.wave === 1 ? 'WAVE 1' : '', t: 0, dur: 2.0 };
@@ -257,19 +259,21 @@
       for (const e of this.enemies) {
         if (e.dead || e.state !== 'attack') continue;
         const dx = e.x - p.x, dy = e.y - p.y, r = p.radius + e.radius - 2;
-        if (dx * dx + dy * dy < r * r) { this.hitEnemy(e, 99); this.killPlayer(); return; }
+        if (dx * dx + dy * dy < r * r) { this.hitEnemy(e, 99, true); this.killPlayer(); return; }
       }
     }
 
-    hitEnemy(e, dmg) {
+    // crash=true：敵機撞上玩家而同歸於盡，敵機會爆炸但不算玩家擊殺，不得分
+    hitEnemy(e, dmg, crash) {
       e.hp -= dmg;
       if (e.hp > 0) { e.flash = 0.12; BM.Audio.sfx('hit'); return; }
       e.dead = true;
+      BM.Particles.explode(e.x, e.y, BM.Enemy.TYPES[e.type].color);
+      BM.Audio.sfx('boom');
+      if (crash) return;
       const pts = e.points * (e.state === 'attack' ? 2 : 1);      // 出擊中的敵機分數 ×2
       this.addScore(pts);
-      BM.Particles.explode(e.x, e.y, BM.Enemy.TYPES[e.type].color);
       BM.Popups.add(e.x, e.y - 12, String(pts), e.state === 'attack' ? '#ffe27a' : '#ffffff');
-      BM.Audio.sfx('boom');
     }
 
     killPlayer() {
@@ -320,7 +324,7 @@
       BM.Popups.draw(ctx);
       ctx.restore();
 
-      BM.HUD.draw(ctx, { score: this.score, hi: this.hi, lives: this.reserve });
+      BM.HUD.draw(ctx, { score: this.score, hi: this.hi, lives: this.reserve, wave: this.wave, boss: !!this.boss });
       if (this.boss && this.state !== 'clear') BM.HUD.drawBossBar(ctx, this.boss);
       this.drawBanner(ctx);
       if (this.state === 'gameover') this.drawGameOver(ctx);
@@ -340,7 +344,7 @@
         ctx.fillRect(0, 0, W, H);
       }
       ctx.save();
-      ctx.translate(W / 2, b.small ? 300 : 250);
+      ctx.translate(W / 2, b.small ? 300 : 215);       // 橫幅在陣形上方，不擋到敵機
       ctx.scale(s, s);
       const col = b.warn ? '#ff5d5d' : '#ffd166', edge = b.warn ? '#4a0a14' : '#5b2a86';
       D.text(ctx, b.text, 0, 0, { size: b.small ? 48 : 60, align: 'center', color: col, stroke: edge, strokeW: 10, weight: '900', family: D.NUM, alpha: a, shadow: 'rgba(255,170,70,0.8)', shadowBlur: 16 });

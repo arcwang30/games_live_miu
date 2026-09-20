@@ -10,6 +10,21 @@
       D.text(ctx, M.pad(Math.min(hi, C.MAX_HISCORE), 8), x, y + 28, { size: 26, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 5, family: D.NUM, weight: '900' });
     },
 
+    // 波數：「WAVE」小標籤 + 大數字，靠右對齊；BOSS 波時標籤改成紅色的「BOSS WAVE」
+    drawWave(ctx, wave, isBoss, xRight, y) {
+      const num = String(wave);
+      const numOpt = { size: 24, align: 'right', color: '#fff', stroke: '#1b1240', strokeW: 5, family: D.NUM, weight: '900' };
+      D.text(ctx, num, xRight, y, numOpt);
+      ctx.save();
+      ctx.font = '900 24px ' + D.NUM;
+      const w = ctx.measureText(num).width;      // 量出數字寬度，標籤才能貼在數字左邊
+      ctx.restore();
+      D.text(ctx, isBoss ? 'BOSS WAVE' : 'WAVE', xRight - w - 8, y + 2, {
+        size: 14, align: 'right', color: isBoss ? '#ff6b6b' : '#8dffb0',
+        stroke: '#1b1240', strokeW: 3, family: D.NUM, weight: '900', spacing: 1
+      });
+    },
+
     // BOSS 血條（畫在 HUD 下方）；66% / 33% 有階段刻度
     drawBossBar(ctx, boss) {
       const x = 70, y = 100, w = 400, h = 14;
@@ -55,10 +70,12 @@
       // 中上：最高積分排行榜第一名
       BM.HUD.drawHi(ctx, s.hi, C.W / 2, 22);
 
-      // 右上：預備戰機
-      D.text(ctx, 'LIVES', C.W - 16, 22, { size: 15, align: 'right', color: '#7fe9ff', stroke: '#1b1240', strokeW: 3, family: D.NUM, weight: '900', spacing: 1 });
+      // 右上：目前波數（BOSS 波標示紅色 BOSS）
+      BM.HUD.drawWave(ctx, s.wave, s.boss, C.W - 16, 22);
+
+      // 右上：預備戰機（在波數下方）
       for (let i = 0; i < s.lives; i++) {
-        BM.Sprites.draw(ctx, 'cat', C.W - 28 - i * 26, 54, 0, 0.42);
+        BM.Sprites.draw(ctx, 'cat', C.W - 28 - i * 26, 58, 0, 0.42);
       }
     }
   };

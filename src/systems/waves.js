@@ -1,4 +1,4 @@
-// 波次：產生 15×5 敵機、依波數調整難度；Director 負責調度敵機何時出擊。
+// 波次：依波數決定敵機數量並產生陣形、調整難度；Director 負責調度敵機何時出擊。
 (function (BM) {
   const C = BM.CONFIG, F = C.FORMATION, M = BM.M;
 
@@ -14,15 +14,25 @@
       };
     },
 
-    // 建立 75 隻敵機。四種 AI 依 (col+row)%4 斜線交錯排列，數量幾乎相等。
-    spawn() {
+    // 第 n 個「一般波」的敵機數量與列數（n 從 1 開始，BOSS 波不計入）
+    plan(n) {
+      const count = Math.min(F.maxCount, F.startCount + F.perWave * (n - 1));
+      return { count, rows: Math.ceil(count / F.cols) };
+    },
+
+    // 建立該波的敵機。一列 15 隻，最後一列不滿時置中（欄位可以是半格）。
+    // 四種 AI 依 (欄+列)%4 斜線交錯排列，數量幾乎相等。
+    spawn(n) {
+      const { count, rows } = BM.Waves.plan(n);
       const list = [];
-      for (let r = 0; r < F.rows; r++) {
-        for (let c = 0; c < F.cols; c++) {
-          const e = new BM.Enemy((c + r) % 4, c, r);
+      for (let r = 0; r < rows; r++) {
+        const k = r < rows - 1 ? F.cols : count - F.cols * (rows - 1);   // 這一列的隻數
+        const start = (F.cols - k) / 2;
+        for (let i = 0; i < k; i++) {
+          const e = new BM.Enemy((Math.floor(start) + i + r) % 4, start + i, r);
           e.side = r % 2 === 0 ? 1 : -1;                       // 奇偶列左右交替登場
-          const k = e.side === 1 ? c : F.cols - 1 - c;
-          e.delay = 0.5 + r * 0.6 + k * 0.065;
+          const idx = e.side === 1 ? i : k - 1 - i;
+          e.delay = 0.5 + r * 0.55 + idx * 0.065;
           list.push(e);
         }
       }

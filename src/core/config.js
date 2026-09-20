@@ -23,8 +23,11 @@
       invuln: 2.4
     },
 
-    // 敵機待機陣形：15 欄 × 5 列，位於畫面中間 1/3（y 320~640）
-    FORMATION: { cols: 15, rows: 5, cx: 270, baseY: 390, spacingX: 31, spacingY: 40, swayAmp: 16 },
+    // 敵機待機陣形：15 欄，位於畫面中間 1/3（y 320~640）。列數隨波數增加：
+    // 第 n 個一般波（BOSS 波不計）的敵機數 = min(maxCount, startCount + perWave × (n-1))
+    // → 45、55、65、75（=標準 15×5）、85、90（6 列上限）。最後一列不滿時置中。
+    FORMATION: { cols: 15, cx: 270, baseY: 325, spacingX: 31, spacingY: 40, swayAmp: 16,
+                 startCount: 45, perWave: 10, maxCount: 90 },
 
     ENEMY: { radius: 11, bulletRadius: 5, enterDur: 1.75 },
 
