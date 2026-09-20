@@ -125,6 +125,9 @@
         D.text(ctx, 'M 音效開關　F 全螢幕', W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8' });
       }
 
+      // 左下角版本號（檢查有沒有更新到最新版用）
+      D.text(ctx, 'v' + C.VERSION, 10, 946, { size: 11, color: '#8f9cc8', family: D.NUM, weight: '700', alpha: 0.85 });
+
       // 右下角版權字樣（白色描邊，疊在城鎮剪影上也看得清楚）
       D.text(ctx, "© Arc's Concept Game", W - 12, 943, { size: 16, align: 'right', color: '#5b2a86', stroke: '#ffffff', strokeW: 4, weight: '900' });
     }
