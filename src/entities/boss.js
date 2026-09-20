@@ -249,6 +249,7 @@
           this.guarding = true;
           const k = Math.min(1, a.t / 0.3);
           a.theta = PI / 2 + a.dir * (-B.clawSweep + 2 * B.clawSweep * k);
+          this.tele = { type: 'claw', k: 1, locked: true, sec: SEC, theta: a.theta };   // 揮爪時也顯示危險扇形與當下的打擊範圍
           if (k >= 1) { a.n++; a.stage = 'recover'; a.t = 0; a.dir *= -1; }
           break;
         }
@@ -266,11 +267,13 @@
       }
     }
 
-    // 揮爪判定：以身體為圓心的扇形，隨揮動角度移動
+    // 揮爪判定：以身體為圓心的扇形，隨揮動角度移動。
+    // 判定範圍不會比畫面上的紅色危險扇形（±(clawSweep+clawHalf) 弧度、半徑 clawOut）更大：
+    // 只有玩家中心點確實在扇形內才算被擊中，站在扇形之外一定安全。
     clawHit(p) {
       if (this.state !== 'claw' || this.a.stage !== 'swipe') return false;
       const dx = p.x - this.x, dy = p.y - this.cy, d = Math.hypot(dx, dy);
-      if (d < B.clawIn || d > B.clawOut + p.radius) return false;
+      if (d < B.clawIn || d > B.clawOut) return false;
       return Math.abs(M.wrapAngle(Math.atan2(dy, dx) - this.a.theta)) < B.clawHalf;
     }
 
@@ -363,6 +366,13 @@
         ctx.lineWidth = tl.locked ? 3 : 2;
         if (!tl.locked) ctx.setLineDash([10, 9]);
         ctx.stroke();
+        if (tl.theta !== undefined) {                       // 揮爪中：此刻正在打擊的楔形範圍（與實際判定完全一致）
+          ctx.setLineDash([]);
+          ctx.beginPath(); ctx.moveTo(cx, cy);
+          ctx.arc(cx, cy, B.clawOut, tl.theta - B.clawHalf, tl.theta + B.clawHalf);
+          ctx.closePath();
+          ctx.fillStyle = 'rgba(255,70,70,0.38)'; ctx.fill();
+        }
       } else if (tl.type === 'cheese') {
         if (tl.aim) {
           ctx.strokeStyle = 'rgba(255,225,90,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
@@ -405,8 +415,8 @@
     // 揮爪的三道爪痕
     drawSlash(ctx) {
       const a = this.a, cx = this.x, cy = this.cy;
-      const from = a.theta - a.dir * 0.75;
-      const a0 = Math.min(a.theta, from), a1 = Math.max(a.theta, from);
+      const from = a.theta - a.dir * 0.6, to = a.theta + a.dir * B.clawHalf;   // 爪痕最前端 = 判定楔形的前緣
+      const a0 = Math.min(to, from), a1 = Math.max(to, from);
       ctx.save();
       ctx.lineCap = 'round';
       for (let j = 0; j < 3; j++) {

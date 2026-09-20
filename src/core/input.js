@@ -52,6 +52,7 @@
         if (!e.repeat) justDown[e.code] = true;
         held[e.code] = true;
         keyActivity = true;
+        BM.Touch.disable();          // 用鍵盤就關掉觸控介面與自動連射
         BM.Audio.unlock();
       });
       window.addEventListener('keyup', e => { held[e.code] = false; });
@@ -62,6 +63,8 @@
         pendingClick = { x: I.pointer.x, y: I.pointer.y };
         BM.Audio.unlock();
       });
+      // 手機瀏覽器要在手指「放開」時才算使用者操作，這時才能解鎖音效
+      window.addEventListener('pointerup', () => BM.Audio.unlock());
       window.addEventListener('gamepadconnected', e => {
         if (BM.Game) BM.Game.toast('已連接遊戲控制器：' + e.gamepad.id.slice(0, 28));
       });
@@ -103,25 +106,28 @@
       const padEdge = i => !!cur[i] && !padPrev[i];
       let anyPadEdge = false;
       for (let i = 0; i < cur.length; i++) if (padEdge(i)) anyPadEdge = true;
-      if (anyPadEdge) BM.Audio.unlock();
+      if (anyPadEdge) { BM.Audio.unlock(); BM.Touch.disable(); }   // 用手把就關掉觸控介面
 
       // 鍵盤移動
       const kx = (held.ArrowRight || held.KeyD ? 1 : 0) - (held.ArrowLeft || held.KeyA ? 1 : 0);
       const ky = (held.ArrowDown || held.KeyS ? 1 : 0) - (held.ArrowUp || held.KeyW ? 1 : 0);
-      let ax2 = kx !== 0 ? kx : px;
-      let ay2 = ky !== 0 ? ky : py;
+      // 觸控虛擬圓盤（類比）；鍵盤 / 手把有輸入時優先
+      const T = BM.Touch, ts = T.stick;
+      const tx = ts.active ? ts.vx : 0, ty = ts.active ? ts.vy : 0;
+      let ax2 = kx !== 0 ? kx : (px !== 0 ? px : tx);
+      let ay2 = ky !== 0 ? ky : (py !== 0 ? py : ty);
       const m = Math.hypot(ax2, ay2);
       if (m > 1) { ax2 /= m; ay2 /= m; }
       this.ax = ax2;
       this.ay = ay2;
-      this.fire = !!held.Space || padFire;
+      this.fire = !!held.Space || padFire || T.enabled;    // 觸控模式：子彈自動連射，不需要按鈕
 
       const jd = c => !!justDown[c];
       const se = k => stick[k] && !stickPrev[k];
       const P = this.pressed;
       P.confirm = jd('Enter') || jd('NumpadEnter') || jd('Space') || padEdge(0) || padEdge(9);
       P.back = jd('Escape') || jd('Backspace') || padEdge(1) || padEdge(8);
-      P.pause = jd('Escape') || jd('KeyP') || padEdge(9);
+      P.pause = jd('Escape') || jd('KeyP') || padEdge(9) || T.takePause();
       P.up = jd('ArrowUp') || jd('KeyW') || se('up');
       P.down = jd('ArrowDown') || jd('KeyS') || se('down');
       P.left = jd('ArrowLeft') || jd('KeyA') || se('left');

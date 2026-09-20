@@ -16,12 +16,13 @@
     draw(ctx) { BM.Sprites.draw(ctx, 'fish', this.x, this.y, 0, 1); }
   }
 
-  // 敵方子彈種類：orb=小老鼠光球、poop=BOSS 便便、cheese=BOSS 起司、fish=被 BOSS 反彈回來的小魚
+  // 敵方子彈種類：orb=小老鼠光球、poop=BOSS 便便、cheese=BOSS 起司、
+  // fish=被 BOSS 護盾彈開的玩家小魚（只有視覺效果，不會傷害玩家，讓「危險扇形之外 = 安全」）
   const KINDS = {
     orb:    { sprite: 'orb',    r: C.ENEMY.bulletRadius },
     poop:   { sprite: 'poop',   r: 8 },
     cheese: { sprite: 'cheese', r: 7 },
-    fish:   { sprite: 'fishR',  r: 5 }
+    fish:   { sprite: 'fish',   r: 5, harmless: true, life: 0.9 }
   };
 
   // 敵方子彈：可朝任意角度飛行
@@ -31,6 +32,9 @@
       this.kind = kind || 'orb';
       this.sprite = k.sprite;
       this.r = k.r;
+      this.harmless = !!k.harmless;      // 無傷害：碰撞判定會略過
+      this.life = k.life || 0;           // >0：存活秒數，時間到就消失
+      this.age = 0;
       this.x = x; this.y = y;
       this.angle = angle;
       this.vx = Math.cos(angle) * speed;
@@ -42,14 +46,19 @@
       this.x += this.vx * dt;
       this.y += this.vy * dt;
       this.spin += dt * 4;
+      this.age += dt;
+      if (this.life > 0 && this.age >= this.life) this.dead = true;
       if (this.y > H + 30 || this.y < -30 || this.x < -30 || this.x > W + 30) this.dead = true;
     }
     draw(ctx) {
-      let rot = 0;
+      let rot = 0, alpha;
       if (this.kind === 'poop') rot = Math.sin(this.spin) * 0.35;      // 便便左右搖晃
       else if (this.kind === 'cheese') rot = this.angle;               // 起司朝飛行方向
-      else if (this.kind === 'fish') rot = this.angle + Math.PI / 2;   // 小魚頭朝飛行方向
-      BM.Sprites.draw(ctx, this.sprite, this.x, this.y, rot, 1);
+      else if (this.kind === 'fish') {                                 // 被彈開的小魚：半透明、漸漸消失
+        rot = this.angle + Math.PI / 2;
+        alpha = 0.6 * (1 - this.age / this.life);
+      }
+      BM.Sprites.draw(ctx, this.sprite, this.x, this.y, rot, 1, alpha);
     }
   }
 

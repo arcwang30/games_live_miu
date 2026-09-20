@@ -1,11 +1,20 @@
+/* 鎖住畫面：整個頁面固定、不可捲動 / 下拉重新整理 / 縮放 / 選取 / 長按選單 */
 html, body {
   margin: 0;
+  padding: 0;
+  width: 100%;
   height: 100%;
   overflow: hidden;
+  position: fixed;              /* 手機 Safari 不會因為拖曳而露出網址列或彈跳 */
+  inset: 0;
+  overscroll-behavior: none;    /* 擋掉 Android Chrome 下拉重新整理與捲動連鎖 */
+  touch-action: none;           /* 擋掉瀏覽器自己的拖曳、縮放、雙擊放大手勢 */
   background: radial-gradient(ellipse at center, #1a1f4d 0%, #07091f 75%);
   user-select: none;
   -webkit-user-select: none;
-  touch-action: none;
+  -webkit-touch-callout: none;  /* iOS 長按選單 */
+  -webkit-tap-highlight-color: transparent;
+  -webkit-text-size-adjust: 100%;
 }
 
 #stage {
@@ -14,6 +23,10 @@ html, body {
   display: flex;
   align-items: center;
   justify-content: center;
+  touch-action: none;
+  /* 瀏海 / 圓角螢幕的安全區域 */
+  padding: env(safe-area-inset-top) env(safe-area-inset-right) env(safe-area-inset-bottom) env(safe-area-inset-left);
+  box-sizing: border-box;
 }
 
 #game {
@@ -21,6 +34,8 @@ html, body {
   background: #0d1240;
   box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08), 0 0 60px rgba(90, 120, 255, 0.35);
   outline: none;
+  touch-action: none;
+  -webkit-user-drag: none;
 }
 
 noscript {

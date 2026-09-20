@@ -1,4 +1,4 @@
-// 遊戲主場景：一波一群老鼠（數量隨波數增加）→ 清光進下一波；每 3 波換 BOSS → 玩家全數陣亡則結算
+// 遊戲主場景：一波一群老鼠（數量隨波數增加）→ 清光進下一波；每 5 波換 BOSS → 玩家全數陣亡則結算
 (function (BM) {
   const C = BM.CONFIG, W = C.W, H = C.H, M = BM.M, D = BM.Draw, I = BM.Input;
   const PAUSE_ITEMS = ['繼續遊戲', '回主選單'];
@@ -29,7 +29,7 @@
       this.banner = null;
       this.startWave();
     }
-    exit() {}
+    exit() { BM.Touch.setMode('none'); }
 
     // ------------------------------------------------ 提供給 AI / 玩家的介面
     firePlayer(x, y) {
@@ -38,7 +38,7 @@
       BM.Audio.sfx('shoot');
     }
     fireBullet(x, y, angle, speed, kind) {
-      if (this.eBullets.length >= 140) return;
+      if (kind !== 'fish' && this.eBullets.length >= 140) return;     // 彈開的小魚只是特效，不佔用子彈上限
       this.eBullets.push(new BM.EnemyBullet(x, y, angle, speed, kind));
     }
     sfx(name) { BM.Audio.sfx(name); }
@@ -50,7 +50,7 @@
       this.params = BM.Waves.params(this.wave);
       this.formation.reset();
       this.eBullets.length = 0;
-      if (this.wave % C.BOSS.EVERY === 0) { this.startBossWave(); return; }   // 每 3 波出現一次 BOSS
+      if (this.wave % C.BOSS.EVERY === 0) { this.startBossWave(); return; }   // 每 5 波出現一次 BOSS
 
       this.boss = null;
       // 一般波的序號（BOSS 波不計入）：第 1、2、4、5、7、8… 波依序是第 1、2、3、4、5、6… 個一般波
@@ -103,15 +103,14 @@
       this.waveClear('BOSS DEFEATED!', '擊破 BOSS +' + bonus);
     }
 
-    // ---- 玩家子彈打到 BOSS 護盾：依圓形法線物理反射，變成紅色小魚飛回來 ----
+    // ---- 玩家子彈打到 BOSS 護盾：依圓形法線物理反射，變成半透明小魚彈開 ----
+    // 彈開的小魚只有視覺效果（harmless），不會傷害玩家：確保「危險扇形之外 = 安全」
     reflectBullet(b, bo, dx, dy) {
       const r = Math.hypot(dx, dy) || 1, nx = dx / r, ny = dy / r;
       const vx = 0, vy = -C.PLAYER.bulletSpeed;
       const dot = vx * nx + vy * ny;
-      let ang = Math.atan2(vy - 2 * dot * ny, vx - 2 * dot * nx) + M.rand(-0.22, 0.22);
-      if (Math.sin(ang) < 0.25) ang = Math.cos(ang) >= 0 ? 0.25 : Math.PI - 0.25;     // 一定要往下飛
-      this.reflectCount = (this.reflectCount || 0) + 1;
-      if (this.reflectCount % 2 === 0) this.fireBullet(b.x, b.y + 4, ang, 340, 'fish');   // 每兩發反彈一發，避免連射時被自己的子彈淹沒
+      const ang = Math.atan2(vy - 2 * dot * ny, vx - 2 * dot * nx) + M.rand(-0.22, 0.22);
+      this.fireBullet(b.x, b.y + 4, ang, 300, 'fish');
       b.dead = true;
       BM.Particles.explode(b.x, b.y, '#9ff3ff', 4);
       BM.Audio.sfx('reflect');
@@ -160,6 +159,8 @@
 
     // ------------------------------------------------ 更新
     update(dt) {
+      // 觸控介面（虛擬圓盤與暫停按鈕）只在遊玩中啟用；暫停 / 遊戲結束時關閉
+      BM.Touch.setMode(this.paused || this.state === 'gameover' ? 'none' : 'play');
       if (this.paused) { this.updatePause(); return; }
       if (I.pressed.pause && this.state !== 'gameover') { this.pause(); return; }
 
@@ -251,7 +252,7 @@
 
       // 敵方子彈 → 玩家
       for (const b of this.eBullets) {
-        if (b.dead) continue;
+        if (b.dead || b.harmless) continue;
         const dx = b.x - p.x, dy = b.y - p.y, r = p.radius + b.r;
         if (dx * dx + dy * dy < r * r) { b.dead = true; this.killPlayer(); return; }
       }
@@ -326,6 +327,7 @@
 
       BM.HUD.draw(ctx, { score: this.score, hi: this.hi, lives: this.reserve, wave: this.wave, boss: !!this.boss });
       if (this.boss && this.state !== 'clear') BM.HUD.drawBossBar(ctx, this.boss);
+      BM.Touch.draw(ctx, this.time);          // 虛擬圓盤 + 暫停按鈕（僅觸控模式）
       this.drawBanner(ctx);
       if (this.state === 'gameover') this.drawGameOver(ctx);
       if (this.paused) this.drawPause(ctx);
@@ -366,7 +368,7 @@
       for (let i = 0; i < PAUSE_ITEMS.length; i++) {
         D.button(ctx, PAUSE_ITEMS[i], W / 2, 470 + i * 76, 300, 56, i === this.pauseIdx, this.time + performance.now() / 1000);
       }
-      D.text(ctx, 'Esc / P / Start 繼續', W / 2, 660, { size: 16, align: 'center', color: '#9fb0e8' });
+      D.text(ctx, BM.Touch.enabled ? '點一下選項' : 'Esc / P / Start 繼續', W / 2, 660, { size: 16, align: 'center', color: '#9fb0e8' });
     }
   }
 

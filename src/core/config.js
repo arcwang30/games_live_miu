@@ -15,8 +15,8 @@
       startX: 270, startY: 880,
       speed: 340,
       minX: 26, maxX: 514, minY: 690, maxY: 900,   // 玩家活動範圍（畫面最下方）
-      fireDelay: 0.18,       // 連發間隔（秒），每次射出左右兩發
-      bulletSpeed: 760,
+      fireDelay: 0.22,       // 連發間隔（秒），每次射出左右兩發（原 0.18，調慢約 18%）
+      bulletSpeed: 700,      // 子彈飛行速度（原 760，調慢約 8%）
       maxBullets: 20,
       radius: 8,
       respawnDelay: 1.7,
@@ -31,10 +31,10 @@
 
     ENEMY: { radius: 11, bulletRadius: 5, enterDur: 1.75 },
 
-    // BOSS「流氓大老鼠」：每 EVERY 波出現一次（第 3、6、9… 波）
+    // BOSS「流氓大老鼠」：每 EVERY 波出現一次（第 5、10、15… 波）
     BOSS: {
-      EVERY: 3,
-      hpBase: 200, hpPerLevel: 70, hpMax: 520,   // 血量：第 1 隻 200，之後每隻 +70，上限 520
+      EVERY: 5,
+      hpBase: 160, hpPerLevel: 55, hpMax: 420,   // 血量：第 1 隻 160，之後每隻 +55，上限 420（配合射速調慢後下修，戰鬥約 70 秒）
       radius: 64,             // 身體判定圓
       homeY: 250,             // 待機高度
       idle: 1.3,              // 兩次攻擊之間的間隔（秒）

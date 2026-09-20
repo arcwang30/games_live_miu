@@ -8,7 +8,11 @@
   let toastText = '', toastT = 0;
 
   function resize() {
-    const vw = window.innerWidth, vh = window.innerHeight;
+    // 依 #stage 的實際內容區決定畫布大小（已扣掉瀏海 / 圓角的安全區 padding；
+    // 手機網址列收合造成可視高度改變時，stage 也會跟著變）
+    const stage = canvas.parentElement, cs = getComputedStyle(stage);
+    const vw = stage.clientWidth - (parseFloat(cs.paddingLeft) || 0) - (parseFloat(cs.paddingRight) || 0);
+    const vh = stage.clientHeight - (parseFloat(cs.paddingTop) || 0) - (parseFloat(cs.paddingBottom) || 0);
     let h = vh, w = h * C.W / C.H;
     if (w > vw) { w = vw; h = w * C.H / C.W; }
     const dpr = window.devicePixelRatio || 1;
@@ -59,8 +63,15 @@
       canvas = c;
       ctx = canvas.getContext('2d');
       BM.Input.attach(canvas);
+      BM.Touch.attach(canvas);
       window.addEventListener('resize', resize);
+      window.addEventListener('orientationchange', () => setTimeout(resize, 120));
+      if (window.visualViewport) window.visualViewport.addEventListener('resize', resize);
       window.addEventListener('blur', () => { if (current && current.onBlur) current.onBlur(); });
+      // 手機切到別的 App / 分頁時自動暫停
+      document.addEventListener('visibilitychange', () => {
+        if (document.hidden && current && current.onBlur) current.onBlur();
+      });
       resize();
       requestAnimationFrame(t => { last = t; frame(t); });
     },

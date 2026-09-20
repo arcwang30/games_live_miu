@@ -116,9 +116,14 @@
       }
 
       const pad = I.pad;
-      D.text(ctx, '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
-      D.text(ctx, pad ? '● 已偵測到遊戲控制器' : '○ 支援遊戲控制器（連接後按任一鍵）', W / 2, 918, { size: 15, align: 'center', color: pad ? '#8dffb0' : '#9aa8d8', stroke: '#1b1240', strokeW: 3 });
-      D.text(ctx, 'M 音效開關　F 全螢幕', W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8' });
+      if (BM.Touch.enabled) {                          // 手機 / 平板：顯示觸控操作提示
+        D.text(ctx, '點選按鈕開始　遊戲中手指拖曳控制方向', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
+        D.text(ctx, '子彈自動連射　右上角 ⏸ 可暫停', W / 2, 918, { size: 15, align: 'center', color: '#8dffb0', stroke: '#1b1240', strokeW: 3 });
+      } else {
+        D.text(ctx, '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
+        D.text(ctx, pad ? '● 已偵測到遊戲控制器' : '○ 支援遊戲控制器（連接後按任一鍵）', W / 2, 918, { size: 15, align: 'center', color: pad ? '#8dffb0' : '#9aa8d8', stroke: '#1b1240', strokeW: 3 });
+        D.text(ctx, 'M 音效開關　F 全螢幕', W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8' });
+      }
 
       // 右下角版權字樣（白色描邊，疊在城鎮剪影上也看得清楚）
       D.text(ctx, "© Arc's Concept Game", W - 12, 943, { size: 16, align: 'right', color: '#5b2a86', stroke: '#ffffff', strokeW: 4, weight: '900' });
@@ -130,7 +135,7 @@
       ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
       D.text(ctx, title, W / 2, 122, { size: 42, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 8, weight: '900' });
-      D.text(ctx, '按 Enter / 空白鍵 / B 返回', W / 2, 858, { size: 16, align: 'center', color: '#9fb0e8' });
+      D.text(ctx, BM.Touch.enabled ? '點一下畫面返回' : '按 Enter / 空白鍵 / B 返回', W / 2, 858, { size: 16, align: 'center', color: '#9fb0e8' });
     }
 
     drawRanking(ctx, t) {
@@ -167,12 +172,17 @@
         D.text(ctx, rows[i][1], 140, y, { size: 16, color: '#fff' });
         D.text(ctx, rows[i][2], 330, y, { size: 15, color: '#dfe6ff' });
       }
-      D.text(ctx, '消滅所有老鼠進入下一波！每 30000 分多一台戰機', W / 2, 366, { size: 16, align: 'center', color: '#bcd0ff' });
-      D.text(ctx, '每 3 波出現 BOSS「流氓大老鼠」，他揮爪時會反彈子彈！', W / 2, 396, { size: 16, align: 'center', color: '#ff9ecb', weight: '900' });
+      // 手機 / 平板觸控
+      D.text(ctx, '手機觸控', 64, 352, { size: 22, color: '#ffd166', weight: '900' });
+      D.text(ctx, '手指在畫面拖曳出圓盤控制方向，子彈自動連射', 140, 348, { size: 15, color: '#fff' });
+      D.text(ctx, '右上角 ⏸ 按鈕：暫停並開啟選單', 140, 370, { size: 15, color: '#dfe6ff' });
 
-      D.text(ctx, '— 敵機介紹 —', W / 2, 432, { size: 24, align: 'center', color: '#ffd166', weight: '900' });
+      D.text(ctx, '消滅所有老鼠進入下一波！每 30000 分多一台戰機', W / 2, 410, { size: 16, align: 'center', color: '#bcd0ff' });
+      D.text(ctx, '每 5 波出現 BOSS「流氓大老鼠」，他揮爪時會反彈子彈！', W / 2, 436, { size: 16, align: 'center', color: '#ff9ecb', weight: '900' });
+
+      D.text(ctx, '— 敵機介紹 —', W / 2, 474, { size: 24, align: 'center', color: '#ffd166', weight: '900' });
       for (let i = 0; i < 4; i++) {
-        const y = 510 + i * 84;
+        const y = 546 + i * 76;
         ctx.fillStyle = 'rgba(255,255,255,0.08)';
         D.roundRect(ctx, 56, y - 34, W - 112, 68, 14); ctx.fill();
         BM.Sprites.draw(ctx, 'mouse' + i, 106, y, Math.sin(t * 2 + i) * 0.2, 1.5);
