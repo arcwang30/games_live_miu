@@ -17,6 +17,7 @@
       this.fireT = 0;
       this.radius = P.radius;
       this.fx.clear();
+      BM.Touch.resync();     // 重生 / 重新開始：舊的觸控定點作廢，手指還按著就重新對準手指
     }
 
     respawn() {
@@ -37,11 +38,25 @@
 
     // input：BM.Input；world：PlayScene（提供 firePlayer）
     update(dt, input, world) {
-      this.vx = input.ax * P.speed;      // 也供 BOSS 預判瞄準用
-      this.x = M.clamp(this.x + input.ax * P.speed * dt, P.minX, P.maxX);
-      this.y = M.clamp(this.y + input.ay * P.speed * dt, P.minY, P.maxY);
+      let vy = input.ay * P.speed;
+      if (input.target) {
+        // 觸控：朝手指上方的定點飛。誤差越大越快（比例追蹤，手感平順），但有速度上限，
+        // 所以「點新位置」會快速飛過去、而不是瞬間移動
+        let dx = input.target.x - this.x, dy = input.target.y - this.y;
+        let vx = dx * P.touchFollow;
+        vy = dy * P.touchFollow;
+        const sp = Math.hypot(vx, vy);
+        if (sp > P.touchSpeed) { vx *= P.touchSpeed / sp; vy *= P.touchSpeed / sp; }
+        this.vx = vx;
+        this.x = M.clamp(this.x + vx * dt, P.minX, P.maxX);
+        this.y = M.clamp(this.y + vy * dt, P.minY, P.maxY);
+      } else {
+        this.vx = input.ax * P.speed;      // 也供 BOSS 預判瞄準用
+        this.x = M.clamp(this.x + input.ax * P.speed * dt, P.minX, P.maxX);
+        this.y = M.clamp(this.y + vy * dt, P.minY, P.maxY);
+      }
       if (this.invuln > 0) this.invuln = Math.max(0, this.invuln - dt);
-      this.updateFx(dt, true, -input.ay);   // 往上飛（ay<0）噴得更長
+      this.updateFx(dt, true, M.clamp(-vy / P.speed, -1, 1));   // 往上飛噴得更長
 
       this.fireT -= dt;
       if (input.fire && this.fireT <= 0) {

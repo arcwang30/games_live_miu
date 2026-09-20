@@ -117,7 +117,7 @@
 
       const pad = I.pad;
       if (BM.Touch.enabled) {                          // 手機 / 平板：顯示觸控操作提示
-        D.text(ctx, '點選按鈕開始　遊戲中手指拖曳控制方向', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
+        D.text(ctx, '點選按鈕開始　遊戲中按住畫面，戰機在手指上方跟隨', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
         D.text(ctx, '子彈自動連射　右上角 ⏸ 可暫停', W / 2, 918, { size: 15, align: 'center', color: '#8dffb0', stroke: '#1b1240', strokeW: 3 });
       } else {
         D.text(ctx, '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
@@ -174,8 +174,8 @@
       }
       // 手機 / 平板觸控
       D.text(ctx, '手機觸控', 64, 352, { size: 22, color: '#ffd166', weight: '900' });
-      D.text(ctx, '手指在畫面拖曳出圓盤控制方向，子彈自動連射', 140, 348, { size: 15, color: '#fff' });
-      D.text(ctx, '右上角 ⏸ 按鈕：暫停並開啟選單', 140, 370, { size: 15, color: '#dfe6ff' });
+      D.text(ctx, '按住畫面：戰機飛到手指正上方並跟隨移動（不被手指擋住）', 140, 348, { size: 14, color: '#fff' });
+      D.text(ctx, '放開再點新位置，戰機快速飛過去；子彈自動連射；右上 ⏸ 暫停', 140, 370, { size: 13, color: '#dfe6ff' });
 
       D.text(ctx, '消滅所有老鼠進入下一波！每 30000 分多一台戰機', W / 2, 410, { size: 16, align: 'center', color: '#bcd0ff' });
       D.text(ctx, '每 5 波出現 BOSS「流氓大老鼠」，他揮爪時會反彈子彈！', W / 2, 436, { size: 16, align: 'center', color: '#ff9ecb', weight: '900' });

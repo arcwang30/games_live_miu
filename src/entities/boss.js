@@ -172,7 +172,8 @@
       } else if (a.stage === 'throw') {
         a.timer -= dt;
         if (a.timer <= 0) {
-          const lead = M.clamp(p.x + p.vx * 0.2, 20, W - 20);          // 微預判：只會左右橫移的玩家也會被打到
+          // 微預判：只會左右橫移的玩家也會被打到（速度上限取鍵盤移動速度，觸控高速飛行時不會預判過頭）
+          const lead = M.clamp(p.x + M.clamp(p.vx, -C.PLAYER.speed, C.PLAYER.speed) * 0.2, 20, W - 20);
           w.fireBullet(hx, hy, Math.atan2(p.y - hy, lead - hx), B.cheeseSpeed * this.bm, 'cheese');
           w.sfx('cheese');
           a.thrown++;

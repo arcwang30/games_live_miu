@@ -27,6 +27,7 @@
       this.paused = false;
       this.pauseIdx = 0;
       this.banner = null;
+      BM.Touch.setMode('play');       // 一進入遊戲就啟用觸控介面（不用等第一格更新）
       this.startWave();
     }
     exit() { BM.Touch.setMode('none'); }

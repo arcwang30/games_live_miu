@@ -33,6 +33,7 @@
 
   const I = BM.Input = {
     ax: 0, ay: 0,          // 移動向量（-1~1，手把搖桿為類比）
+    target: null,          // 觸控：戰機要飛去的定點 {x,y}（null = 沒有）
     fire: false,           // 射擊鍵是否按住
     pressed: {             // 本 frame 剛按下（邊緣觸發）
       confirm: false, back: false, pause: false,
@@ -111,15 +112,15 @@
       // 鍵盤移動
       const kx = (held.ArrowRight || held.KeyD ? 1 : 0) - (held.ArrowLeft || held.KeyA ? 1 : 0);
       const ky = (held.ArrowDown || held.KeyS ? 1 : 0) - (held.ArrowUp || held.KeyW ? 1 : 0);
-      // 觸控虛擬圓盤（類比）；鍵盤 / 手把有輸入時優先
-      const T = BM.Touch, ts = T.stick;
-      const tx = ts.active ? ts.vx : 0, ty = ts.active ? ts.vy : 0;
-      let ax2 = kx !== 0 ? kx : (px !== 0 ? px : tx);
-      let ay2 = ky !== 0 ? ky : (py !== 0 ? py : ty);
+      let ax2 = kx !== 0 ? kx : px;
+      let ay2 = ky !== 0 ? ky : py;
       const m = Math.hypot(ax2, ay2);
       if (m > 1) { ax2 /= m; ay2 /= m; }
       this.ax = ax2;
       this.ay = ay2;
+      // 觸控：戰機要飛去的定點（在手指上方）；鍵盤 / 手把有輸入時優先，這時不使用觸控定點
+      const T = BM.Touch;
+      this.target = (T.enabled && T.mode === 'play' && ax2 === 0 && ay2 === 0) ? T.target : null;
       this.fire = !!held.Space || padFire || T.enabled;    // 觸控模式：子彈自動連射，不需要按鈕
 
       const jd = c => !!justDown[c];
