@@ -299,6 +299,7 @@
     draw(ctx) {
       const t = this.time;
       BM.Background.draw(ctx, t);
+      BM.Touch.drawStick(ctx);               // 觸控虛擬搖桿圓盤畫在最底層，不會擋住戰機、敵機和子彈
 
       ctx.save();
       if (this.shake > 0) ctx.translate(M.rand(-1, 1) * this.shake * 14, M.rand(-1, 1) * this.shake * 14);

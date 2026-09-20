@@ -11,7 +11,7 @@
 (function (BM) {
   const C = BM.CONFIG, W = C.W, H = C.H, M = BM.M, D = BM.Draw, P = C.PLAYER;
 
-  const OFFSET_Y = 105;               // 戰機（錨點）在手指上方的距離：讓噴射火焰尖端剛好在圓盤上緣
+  const OFFSET_Y = 75;                // 戰機（錨點）在手指上方的距離：圓盤上緣約在噴射背包下緣，火焰略入圓盤內（原 105，再靠近 30px）
   const RING = 52;                    // 圓盤半徑（邏輯座標）
   const KNOB = 22;                    // 圓盤中心的搖桿頭半徑
   const TOP_LIMIT = 140;              // 這條線以上（HUD 區）按下不會開始操控，避免誤觸
@@ -133,7 +133,9 @@
       return v;
     },
 
-    draw(ctx, t) {
+    // 虛擬搖桿圓盤 + 新點擊位置的提示圈。畫在背景之後、戰機 / 敵機 / 子彈之前，
+    // 所以就算和戰機的火焰重疊，也不會蓋住任何東西
+    drawStick(ctx) {
       if (!T.enabled || T.mode !== 'play') return;
       const s = T.stick;
 
@@ -171,6 +173,12 @@
         ctx.beginPath(); ctx.arc(T.target.x, T.target.y, 12 + 34 * (1 - pk), 0, M.TAU); ctx.stroke();
         ctx.restore();
       }
+    },
+
+    // 操作提示文字 + 暫停按鈕（畫在最上層，HUD 之後）
+    draw(ctx, t) {
+      if (!T.enabled || T.mode !== 'play') return;
+      const s = T.stick;
 
       if (!T.used && !s.active) {                                     // 第一次使用的操作提示
         D.text(ctx, '按住畫面：戰機在手指上方', HINT.x + 40, HINT.y + RING + 22, { size: 14, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 4, weight: '900', alpha: 0.6 + 0.4 * Math.sin(t * 4) });
