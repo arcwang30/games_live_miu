@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1, maximum-scale=1, user-scalable=no">
+  <title>子彈喵喵</title>
+  <link rel="stylesheet" href="styles/main.css">
+</head>
+<body>
+  <div id="stage">
+    <canvas id="game" width="540" height="960"></canvas>
+  </div>
+  <noscript>請開啟瀏覽器的 JavaScript 才能遊玩《子彈喵喵》。</noscript>
+
+  <!-- 使用一般 script（非 ES module），這樣直接雙擊 index.html（file://）也能執行 -->
+  <script src="src/core/config.js"></script>
+  <script src="src/utils/math.js"></script>
+  <script src="src/utils/draw.js"></script>
+  <script src="src/utils/storage.js"></script>
+  <script src="src/core/input.js"></script>
+  <script src="src/core/audio.js"></script>
+  <script src="src/ui/sprites.js"></script>
+  <script src="src/ui/background.js"></script>
+  <script src="src/ui/hud.js"></script>
+  <script src="src/entities/particle.js"></script>
+  <script src="src/entities/bullet.js"></script>
+  <script src="src/entities/jetfx.js"></script>
+  <script src="src/entities/player.js"></script>
+  <script src="src/systems/formation.js"></script>
+  <script src="src/systems/ai.js"></script>
+  <script src="src/entities/enemy.js"></script>
+  <script src="src/entities/boss.js"></script>
+  <script src="src/systems/waves.js"></script>
+  <script src="src/scenes/menu-scene.js"></script>
+  <script src="src/scenes/gameover-scene.js"></script>
+  <script src="src/scenes/play-scene.js"></script>
+  <script src="src/core/game.js"></script>
+  <script src="src/main.js"></script>
+</body>
+</html>

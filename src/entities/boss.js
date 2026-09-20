@@ -1,0 +1,439 @@
+// BOSS：流氓大老鼠（獨眼面罩 + 太空裝）
+//
+// 狀態機：enter（登場）→ idle（待機）→ 依洗牌袋輪流抽 4 種攻擊 → idle …
+//   fan    傘狀便便彈：扇形散射便便，連發 3～4 輪，奇數輪錯開縫隙
+//   cheese 丟起司：舉起起司（末段出現黃色瞄準線）後連續快速直線彈
+//   charge 身體衝撞：地上標出紅色衝撞道，鎖定後直線俯衝出畫面，再從上方回場
+//   claw   爪擊（近戰）：欺近玩家、舉爪蓄力（顯示危險扇形）、揮爪；
+//          蓄力～收招期間有護盾，會把玩家子彈反彈回來（此時打不到 BOSS）
+// 血量 66% / 33% 進入第 2 / 3 階段（速度 ×1.12 / ×1.25，發數增加）。
+// 血量歸零 → dying：定格、一臉厭世、碎面罩、嘆氣、講「唉，下班了」，最後才爆炸 → dead。
+(function (BM) {
+  const C = BM.CONFIG, B = C.BOSS, M = BM.M, D = BM.Draw, W = C.W, H = C.H, PI = Math.PI;
+
+  class Boss {
+    constructor(level) {
+      this.level = level;
+      this.maxHp = Math.min(B.hpMax, B.hpBase + B.hpPerLevel * (level - 1));
+      this.hp = this.maxHp;
+      this.ghost = this.maxHp;          // 血條殘影
+      this.x = W / 2; this.y = -180;
+      this.radius = B.radius;
+      this.guardR = B.guardRadius;
+      this.state = 'enter';
+      this.t = 0; this.time = 0;
+      this.a = {};
+      this.face = 'normal';
+      this.phase = 1;
+      this.flash = 0;
+      this.guarding = false;
+      this.rot = 0; this.sx = 0;
+      this.bag = []; this.last = '';
+      this.done = false;
+      this.tele = null;
+      this.puffs = [];
+      this.swayT = Math.random() * 6;
+      this.lm = Math.min(1.6, 1 + 0.1 * (level - 1));     // 動作速度倍率（隨 BOSS 等級）
+      this.bm = Math.min(1.5, 1 + 0.06 * (level - 1));    // 子彈速度倍率
+      this.px = W / 2; this.py = 800;                      // 最近一次看到的玩家位置
+      this.idleDur = 1;
+    }
+
+    get cy() { return this.y + 8; }                        // 身體判定圓中心
+    get spd() { return this.lm * [1, 1.12, 1.25][this.phase - 1]; }
+    get alive() { return this.state !== 'dying' && this.state !== 'dead'; }
+    get vulnerable() { return this.alive && this.state !== 'enter' && !this.guarding; }
+    get lethal() { return this.alive && this.state !== 'enter'; }      // 身體碰到玩家會致命
+    get barK() { return this.state === 'enter' ? Math.min(1, this.t / 2.2) : 1; }
+
+    // ------------------------------------------------ 受傷 / 死亡
+    damage(n, w) {
+      if (!this.alive) return;
+      this.hp = Math.max(0, this.hp - n);
+      this.flash = 0.07;
+      const ph = this.hp <= this.maxHp * 0.33 ? 3 : this.hp <= this.maxHp * 0.66 ? 2 : 1;
+      if (ph > this.phase && this.hp > 0) { this.phase = ph; w.onBossPhase(ph); }
+      if (this.hp <= 0) this.die(w);
+    }
+
+    die(w) {
+      this.state = 'dying';
+      this.t = 0;
+      this.a = { ex: 0, puff: 0 };
+      this.face = 'dead';
+      this.guarding = false;
+      w.onBossDying();
+    }
+
+    // ------------------------------------------------ 共用移動
+    hover(dt, sway) {
+      const tx = W / 2 + Math.sin(this.time * 0.8 + this.swayT) * 150 * sway;
+      this.x += (tx - this.x) * Math.min(1, 2.2 * dt);
+      this.y += (B.homeY + Math.sin(this.time * 2.1) * 7 - this.y) * Math.min(1, 4 * dt);
+    }
+
+    toIdle() {
+      this.state = 'idle';
+      this.t = 0;
+      this.a = {};
+      this.face = 'normal';
+      this.idleDur = B.idle / this.spd;
+    }
+
+    nextAttack(w) {
+      if (!this.bag.length) this.bag = M.shuffle(['fan', 'cheese', 'charge', 'claw']);
+      let kind = this.bag.pop();
+      if (kind === this.last && this.bag.length) { const o = this.bag.pop(); this.bag.push(kind); kind = o; }
+      this.last = kind;
+      this.state = kind;
+      this.t = 0;
+      this.face = 'angry';
+      switch (kind) {
+        case 'fan':    this.a = { stage: 'wind', t: 0, volley: 0, timer: 0, total: this.phase === 3 ? 4 : 3 }; break;
+        case 'cheese': this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 2 + this.phase }; break;
+        case 'charge': this.a = { stage: 'tele', t: 0, lockX: this.x, locked: false, vy: 0, n: 0, total: this.phase === 3 ? 2 : 1 }; w.sfx('lock'); break;
+        case 'claw':   this.a = { stage: 'approach', t: 0, n: 0, total: this.phase >= 2 ? 2 : 1, dir: 1, theta: PI / 2 }; w.sfx('clawWind'); break;
+      }
+    }
+
+    // ------------------------------------------------ 更新
+    update(dt, w) {
+      this.time += dt; this.t += dt;
+      if (this.flash > 0) this.flash -= dt;
+      const p = w.player;
+      this.px = p.x; this.py = p.y;
+      this.ghost = Math.max(this.hp, this.ghost - this.maxHp * 0.3 * dt);
+      this.sx = 0; this.tele = null; this.guarding = false;
+      if (this.alive) this.rot += (0 - this.rot) * Math.min(1, 6 * dt);
+
+      switch (this.state) {
+        case 'enter': {
+          const k = Math.min(1, this.t / 2.4);
+          this.y = M.lerp(-180, B.homeY, M.easeOutCubic(k));
+          if (k >= 1) this.toIdle();
+          break;
+        }
+        case 'idle':
+          this.hover(dt, 1);
+          if (p.alive && this.t >= this.idleDur) this.nextAttack(w);
+          break;
+        case 'fan': this.updateFan(dt, w); break;
+        case 'cheese': this.updateCheese(dt, w); break;
+        case 'charge': this.updateCharge(dt, w); break;
+        case 'claw': this.updateClaw(dt, w); break;
+        case 'dying': this.updateDying(dt, w); break;
+      }
+
+      for (const f of this.puffs) { f.t += dt; f.y -= 34 * dt; f.x += 10 * dt; }
+      this.puffs = this.puffs.filter(f => f.t < 1.6);
+    }
+
+    // ---- 傘狀便便彈 ----
+    updateFan(dt, w) {
+      const a = this.a; a.t += dt;
+      this.hover(dt, 0.4);
+      if (!w.player.alive) { this.toIdle(); return; }
+      if (a.stage === 'wind') {
+        this.sx = Math.sin(this.time * 50) * 1.6;
+        if (a.t >= 0.55 / this.spd) { a.stage = 'fire'; a.t = 0; a.timer = 0; }
+      } else if (a.stage === 'fire') {
+        a.timer -= dt;
+        if (a.timer <= 0) {
+          this.fireFan(w, a.volley);
+          a.volley++;
+          a.timer = 0.58 / this.spd;
+          if (a.volley >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.7 / this.spd) this.toIdle();
+    }
+
+    fireFan(w, volley) {
+      const count = this.phase >= 2 ? 9 : 7, span = 1.8;
+      const center = M.clamp(Math.atan2(this.py - this.y, this.px - this.x), PI / 2 - 0.5, PI / 2 + 0.5);
+      const odd = volley % 2 === 1, step = span / (count - 1);
+      const n = odd ? count - 1 : count;
+      const start = center - span / 2 + (odd ? step / 2 : 0);   // 奇數輪往旁邊錯半格，形成新的縫隙
+      const sp = B.poopSpeed * this.bm * (this.phase === 3 ? 1.1 : 1);
+      for (let i = 0; i < n; i++) w.fireBullet(this.x, this.y + 62, start + i * step, sp, 'poop');
+      w.sfx('poop');
+    }
+
+    // ---- 丟起司 ----
+    updateCheese(dt, w) {
+      const a = this.a; a.t += dt;
+      this.hover(dt, 0.4);
+      const p = w.player;
+      if (!p.alive) { this.toIdle(); return; }
+      const hx = this.x + 30, hy = this.y + 48;
+      if (a.stage === 'wind') {
+        const dur = 0.7 / this.spd;
+        this.tele = { type: 'cheese', hx, hy, k: Math.min(1, a.t / dur), aim: a.t >= dur - 0.35 };
+        if (a.t >= dur) { a.stage = 'throw'; a.t = 0; a.timer = 0; }
+      } else if (a.stage === 'throw') {
+        a.timer -= dt;
+        if (a.timer <= 0) {
+          const lead = M.clamp(p.x + p.vx * 0.2, 20, W - 20);          // 微預判：只會左右橫移的玩家也會被打到
+          w.fireBullet(hx, hy, Math.atan2(p.y - hy, lead - hx), B.cheeseSpeed * this.bm, 'cheese');
+          w.sfx('cheese');
+          a.thrown++;
+          a.timer = 0.26 / this.spd;
+          if (a.thrown >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.7 / this.spd) this.toIdle();
+    }
+
+    // ---- 身體衝撞 ----
+    updateCharge(dt, w) {
+      const a = this.a, p = w.player; a.t += dt;
+      switch (a.stage) {
+        case 'tele': {
+          const dur = (a.n === 0 ? 0.95 : 0.7) / this.spd;
+          if (!a.locked) a.lockX += M.clamp(p.x - a.lockX, -260 * dt, 260 * dt);    // 衝撞道跟著玩家，最後 0.4 秒鎖定
+          if (!a.locked && a.t >= dur - 0.4) { a.locked = true; w.sfx('lock'); }
+          this.x += (a.lockX - this.x) * Math.min(1, 8 * dt);
+          this.y += (B.homeY - 40 * M.easeOutCubic(Math.min(1, a.t / 0.4)) - this.y) * Math.min(1, 10 * dt);
+          this.sx = Math.sin(this.time * 60) * 2.2;
+          this.tele = { type: 'lane', x: a.lockX, locked: a.locked };
+          if (a.t >= dur) { a.stage = 'rush'; a.t = 0; a.vy = 250; this.x = a.lockX; w.sfx('charge'); w.addShake(0.25); }
+          break;
+        }
+        case 'rush':
+          a.vy = Math.min(1150, a.vy + 2600 * dt);
+          this.y += a.vy * dt;
+          if (this.y > H + 140) { a.stage = 'gone'; a.t = 0; a.n++; }
+          break;
+        case 'gone':
+          if (a.t >= 0.6) {
+            this.x = W / 2 + M.rand(-100, 100); this.y = -180;
+            a.stage = 'reenter'; a.t = 0; a.locked = false; a.lockX = this.x;
+          }
+          break;
+        case 'reenter': {
+          const k = Math.min(1, a.t / 1.0);
+          this.y = M.lerp(-180, B.homeY - 40, M.easeOutCubic(k));
+          if (k >= 1) {
+            if (a.n < a.total && p.alive) { a.stage = 'tele'; a.t = 0; }
+            else this.toIdle();
+          }
+          break;
+        }
+      }
+    }
+
+    // ---- 爪擊（近戰 + 反彈子彈）----
+    updateClaw(dt, w) {
+      const a = this.a, p = w.player; a.t += dt;
+      const ty = M.clamp(p.y - 190, 300, 660);
+      if (!p.alive && (a.stage === 'approach' || a.stage === 'wind' || a.stage === 'wind2')) { a.stage = 'retreat'; a.t = 0; }
+      const SEC = B.clawSweep + B.clawHalf;
+
+      switch (a.stage) {
+        case 'approach':
+          this.x += (p.x - this.x) * Math.min(1, 4 * dt);
+          this.y += (ty - this.y) * Math.min(1, 5 * dt);
+          if (a.t >= 0.9 / this.spd || (a.t > 0.4 && Math.abs(ty - this.y) < 10)) {
+            a.stage = 'wind'; a.t = 0; a.dir = Math.random() < 0.5 ? 1 : -1; w.sfx('clawWind');
+          }
+          break;
+        case 'wind': case 'wind2': {
+          this.guarding = true;
+          const dur = (a.stage === 'wind' ? 0.95 : 0.55) / this.spd;
+          const locked = a.t >= dur - 0.28;
+          if (!locked) this.x += M.clamp(p.x - this.x, -130 * dt, 130 * dt);          // 揮爪前 0.28 秒鎖定位置
+          this.sx = Math.sin(this.time * 45) * 1.2;
+          this.tele = { type: 'claw', k: Math.min(1, a.t / dur), locked, sec: SEC };
+          if (a.t >= dur) { a.stage = 'swipe'; a.t = 0; w.sfx('slash'); w.addShake(0.2); }
+          break;
+        }
+        case 'swipe': {
+          this.guarding = true;
+          const k = Math.min(1, a.t / 0.3);
+          a.theta = PI / 2 + a.dir * (-B.clawSweep + 2 * B.clawSweep * k);
+          if (k >= 1) { a.n++; a.stage = 'recover'; a.t = 0; a.dir *= -1; }
+          break;
+        }
+        case 'recover':
+          this.guarding = true;
+          if (a.t >= 0.5 / this.spd) {
+            if (a.n < a.total && p.alive) { a.stage = 'wind2'; a.t = 0; w.sfx('clawWind'); }
+            else { a.stage = 'retreat'; a.t = 0; }
+          }
+          break;
+        case 'retreat':
+          this.hover(dt, 0.6);
+          if (Math.abs(this.y - B.homeY) < 14) this.toIdle();
+          break;
+      }
+    }
+
+    // 揮爪判定：以身體為圓心的扇形，隨揮動角度移動
+    clawHit(p) {
+      if (this.state !== 'claw' || this.a.stage !== 'swipe') return false;
+      const dx = p.x - this.x, dy = p.y - this.cy, d = Math.hypot(dx, dy);
+      if (d < B.clawIn || d > B.clawOut + p.radius) return false;
+      return Math.abs(M.wrapAngle(Math.atan2(dy, dx) - this.a.theta)) < B.clawHalf;
+    }
+
+    // ---- 厭世死亡演出 ----
+    updateDying(dt, w) {
+      const a = this.a;
+      this.face = 'dead';
+      this.rot += (0.16 - this.rot) * Math.min(1, 2 * dt);
+      if (this.t < 1.0) {
+        this.sx = Math.sin(this.time * 40) * 1.5;                // 定格：只有微微顫抖
+      } else {
+        this.y += 22 * dt;                                        // 慢慢漂下去
+        a.ex -= dt;
+        if (a.ex <= 0) {
+          a.ex = 0.16;
+          BM.Particles.explode(this.x + M.rand(-62, 62), this.y + M.rand(-70, 70), M.pick(['#ffd166', '#ff8c42', '#ffffff']), 8);
+          w.sfx('boom');
+          w.addShake(0.12);
+        }
+      }
+      a.puff -= dt;
+      if (a.puff <= 0) { a.puff = 0.55; this.puffs.push({ x: this.x + 4, y: this.y - 6, t: 0 }); }   // 嘆氣煙圈
+      if (this.t >= B.deathTime) {
+        for (let i = 0; i < 4; i++) BM.Particles.explode(this.x + M.rand(-40, 40), this.y + M.rand(-50, 50), M.pick(['#ffd166', '#ff6b8a', '#ffffff', '#7fe9ff']), 22);
+        w.sfx('bossBoom');
+        w.addShake(0.9);
+        this.state = 'dead';
+        this.done = true;
+      }
+    }
+
+    // ------------------------------------------------ 繪製
+    draw(ctx, t) {
+      if (this.state === 'dead') return;
+      this.drawTele(ctx, t);
+
+      ctx.save();
+      ctx.translate(this.x + this.sx, this.y);
+      ctx.rotate(this.rot);
+      if (this.alive) {                                            // 噴射火焰
+        const rush = this.state === 'charge' && this.a.stage === 'rush' ? 40 : 0;
+        for (const s of [-1, 1]) {                                 // 靴底噴射
+          const fl = 26 + rush + Math.sin(t * 50 + s) * 6;
+          const g = ctx.createLinearGradient(0, 102, 0, 102 + fl);
+          g.addColorStop(0, '#fff6b0'); g.addColorStop(0.5, '#ffa040'); g.addColorStop(1, 'rgba(255,80,60,0)');
+          ctx.fillStyle = g;
+          ctx.beginPath(); ctx.moveTo(s * 24 - 10, 102); ctx.lineTo(s * 24, 102 + fl); ctx.lineTo(s * 24 + 10, 102); ctx.closePath(); ctx.fill();
+        }
+      }
+      const pulse = this.state === 'fan' && this.a.stage === 'wind' ? 1 + Math.sin(t * 30) * 0.03 : 1;
+      BM.Sprites.draw(ctx, 'boss_' + this.face + (this.flash > 0 ? '_hit' : ''), 0, 0, 0, pulse);
+      if (this.guarding) this.drawClaws(ctx);
+      ctx.restore();
+
+      if (this.guarding) this.drawGuard(ctx, t);
+      if (this.state === 'claw' && this.a.stage === 'swipe') this.drawSlash(ctx);
+      for (const f of this.puffs) {                                // 嘆氣煙圈
+        const k = f.t / 1.6;
+        ctx.save();
+        ctx.globalAlpha = 0.55 * (1 - k);
+        ctx.fillStyle = '#e8ecf7';
+        ctx.beginPath(); ctx.arc(f.x, f.y, 8 + k * 20, 0, M.TAU); ctx.fill();
+        ctx.restore();
+      }
+      if (this.state === 'dying') this.drawBubble(ctx);
+    }
+
+    // 預警：衝撞道 / 爪擊危險扇形 / 起司瞄準線
+    drawTele(ctx, t) {
+      const tl = this.tele;
+      if (!tl) return;
+      ctx.save();
+      if (tl.type === 'lane') {
+        const pulse = 0.12 + 0.1 * Math.sin(t * 22) + (tl.locked ? 0.14 : 0);
+        ctx.fillStyle = 'rgba(255,50,50,' + pulse + ')';
+        ctx.fillRect(tl.x - 70, this.y, 140, H - this.y);
+        ctx.strokeStyle = tl.locked ? 'rgba(255,90,90,0.95)' : 'rgba(255,140,140,0.5)';
+        ctx.lineWidth = tl.locked ? 3 : 2;
+        if (!tl.locked) ctx.setLineDash([12, 10]);
+        ctx.strokeRect(tl.x - 70, this.y, 140, H - this.y);
+        D.text(ctx, '!!', tl.x, H - 60, { size: 40, align: 'center', color: '#ff4d4d', stroke: '#fff', strokeW: 6, weight: '900', family: D.NUM, alpha: 0.5 + 0.5 * Math.sin(t * 20) });
+      } else if (tl.type === 'claw') {
+        const cx = this.x, cy = this.cy;
+        ctx.beginPath(); ctx.moveTo(cx, cy);
+        ctx.arc(cx, cy, B.clawOut, PI / 2 - tl.sec, PI / 2 + tl.sec);
+        ctx.closePath();
+        ctx.fillStyle = 'rgba(255,50,50,' + (0.08 + 0.12 * tl.k + (tl.locked ? 0.1 : 0)) + ')';
+        ctx.fill();
+        ctx.strokeStyle = tl.locked ? 'rgba(255,90,90,0.95)' : 'rgba(255,150,150,0.55)';
+        ctx.lineWidth = tl.locked ? 3 : 2;
+        if (!tl.locked) ctx.setLineDash([10, 9]);
+        ctx.stroke();
+      } else if (tl.type === 'cheese') {
+        if (tl.aim) {
+          ctx.strokeStyle = 'rgba(255,225,90,0.55)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+          ctx.beginPath(); ctx.moveTo(tl.hx, tl.hy); ctx.lineTo(this.px, this.py); ctx.stroke();
+        }
+        BM.Sprites.draw(ctx, 'cheese', tl.hx, tl.hy, -0.5, 0.9 + tl.k * 0.9);
+      }
+      ctx.restore();
+    }
+
+    // 爪擊時舉起的大爪子
+    drawClaws(ctx) {
+      for (const s of [-1, 1]) {
+        ctx.save();
+        ctx.translate(s * 92, 18);
+        ctx.rotate(s * 0.25);
+        for (let k = -1; k <= 1; k++) {
+          ctx.beginPath();
+          ctx.moveTo(k * 10 - 5, 0); ctx.lineTo(k * 10 + 5, 0); ctx.lineTo(k * 14, 46);
+          ctx.closePath();
+          ctx.fillStyle = '#f4f8ff'; ctx.fill();
+          ctx.lineWidth = 2; ctx.strokeStyle = '#2a2438'; ctx.stroke();
+        }
+        ctx.restore();
+      }
+    }
+
+    // 反彈護盾
+    drawGuard(ctx, t) {
+      ctx.save();
+      ctx.translate(this.x, this.cy);
+      ctx.beginPath(); ctx.arc(0, 0, this.guardR, 0, M.TAU);
+      ctx.fillStyle = 'rgba(140,235,255,0.10)'; ctx.fill();
+      ctx.strokeStyle = 'rgba(140,235,255,0.75)'; ctx.lineWidth = 3;
+      ctx.setLineDash([16, 10]); ctx.lineDashOffset = -t * 60;
+      ctx.stroke();
+      ctx.restore();
+    }
+
+    // 揮爪的三道爪痕
+    drawSlash(ctx) {
+      const a = this.a, cx = this.x, cy = this.cy;
+      const from = a.theta - a.dir * 0.75;
+      const a0 = Math.min(a.theta, from), a1 = Math.max(a.theta, from);
+      ctx.save();
+      ctx.lineCap = 'round';
+      for (let j = 0; j < 3; j++) {
+        const r = 120 + j * 55;
+        ctx.beginPath(); ctx.arc(cx, cy, r, a0, a1);
+        ctx.strokeStyle = 'rgba(255,60,60,0.35)'; ctx.lineWidth = 14; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.95)'; ctx.lineWidth = 5; ctx.stroke();
+      }
+      ctx.restore();
+    }
+
+    // 死亡時的對話框
+    drawBubble(ctx) {
+      const text = this.t < 1.1 ? '……' : '唉，下班了';
+      const bw = this.t < 1.1 ? 84 : 168, bh = 46;
+      const bx = M.clamp(this.x + 100, bw / 2 + 8, W - bw / 2 - 8), by = this.y - 108;
+      ctx.save();
+      ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2a2438'; ctx.lineWidth = 3;
+      D.roundRect(ctx, bx - bw / 2, by - bh / 2, bw, bh, 16);
+      ctx.fill(); ctx.stroke();
+      ctx.beginPath();                                             // 對話框尾巴
+      ctx.moveTo(bx - bw / 2 + 22, by + bh / 2 - 1); ctx.lineTo(this.x + 58, this.y - 70); ctx.lineTo(bx - bw / 2 + 46, by + bh / 2 - 1);
+      ctx.fillStyle = '#fff'; ctx.fill();
+      ctx.restore();
+      D.text(ctx, text, bx, by + 2, { size: 24, align: 'center', color: '#2a2438', weight: '900' });
+    }
+  }
+
+  BM.Boss = Boss;
+})(window.BM = window.BM || {});

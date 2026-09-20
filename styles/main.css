@@ -1,0 +1,33 @@
+html, body {
+  margin: 0;
+  height: 100%;
+  overflow: hidden;
+  background: radial-gradient(ellipse at center, #1a1f4d 0%, #07091f 75%);
+  user-select: none;
+  -webkit-user-select: none;
+  touch-action: none;
+}
+
+#stage {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+}
+
+#game {
+  display: block;
+  background: #0d1240;
+  box-shadow: 0 0 0 2px rgba(255, 255, 255, 0.08), 0 0 60px rgba(90, 120, 255, 0.35);
+  outline: none;
+}
+
+noscript {
+  color: #fff;
+  font-family: sans-serif;
+  position: fixed;
+  top: 40%;
+  width: 100%;
+  text-align: center;
+}
