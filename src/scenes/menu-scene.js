@@ -119,6 +119,9 @@
       D.text(ctx, '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
       D.text(ctx, pad ? '● 已偵測到遊戲控制器' : '○ 支援遊戲控制器（連接後按任一鍵）', W / 2, 918, { size: 15, align: 'center', color: pad ? '#8dffb0' : '#9aa8d8', stroke: '#1b1240', strokeW: 3 });
       D.text(ctx, 'M 音效開關　F 全螢幕', W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8' });
+
+      // 右下角版權字樣（白色描邊，疊在城鎮剪影上也看得清楚）
+      D.text(ctx, "© Arc's Concept Game", W - 12, 943, { size: 16, align: 'right', color: '#5b2a86', stroke: '#ffffff', strokeW: 4, weight: '900' });
     }
 
     panel(ctx, title) {
