@@ -72,6 +72,11 @@
     clear()  { [72, 76, 79, 84, 88].forEach((m, i) => tone({ type: 'square', f: mtof(m), d: 0.16, v: 0.08, delay: i * 0.1 })); },
     over()   { [69, 65, 62, 57].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), d: 0.4, v: 0.2, delay: i * 0.28 })); },
 
+    // ---- 進場（起司月亮）----
+    squeak() { tone({ type: 'sine', f: 1700, f2: 2500, d: 0.07, v: 0.07 }); tone({ type: 'sine', f: 1900, f2: 2700, d: 0.07, v: 0.07, delay: 0.1 }); },   // 「吱吱」
+    pop()    { tone({ type: 'square', f: 900, f2: 1500, d: 0.04, v: 0.035 }); },
+    ripple() { [72, 76, 79, 84, 88].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), d: 0.16, v: 0.1, delay: i * 0.05 })); },
+
     // ---- BOSS ----
     warning()   { for (let i = 0; i < 6; i++) tone({ type: 'sawtooth', f: i % 2 ? 660 : 880, d: 0.26, v: 0.09, delay: i * 0.3 }); },
     poop()      { tone({ type: 'sine', f: 340, f2: 110, d: 0.16, v: 0.1 }); },

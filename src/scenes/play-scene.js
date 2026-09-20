@@ -16,6 +16,8 @@
       this.eBullets = [];
       this.enemies = [];
       this.boss = null;
+      this.waveT = 0;
+      this.rippled = true;
       this.score = 0;
       this.reserve = C.START_LIVES;
       this.nextExtra = C.EXTRA_LIFE_EVERY;
@@ -30,7 +32,7 @@
       BM.Touch.setMode('play');       // 一進入遊戲就啟用觸控介面（不用等第一格更新）
       this.startWave();
     }
-    exit() { BM.Touch.setMode('none'); }
+    exit() { BM.Touch.setMode('none'); BM.Background.moon(0, 0); }
 
     // ------------------------------------------------ 提供給 AI / 玩家的介面
     firePlayer(x, y) {
@@ -57,11 +59,26 @@
       // 一般波的序號（BOSS 波不計入）：第 1、2、4、5、7、8… 波依序是第 1、2、3、4、5、6… 個一般波
       this.normalWave = this.wave - Math.floor(this.wave / C.BOSS.EVERY);
       this.enemies = BM.Waves.spawn(this.normalWave);
+      this.entrancePattern = BM.Entrance.patternFor(this.normalWave);   // 這一波的進場隊形（每波輪替）
+      this.rippled = false;                                            // 全隊到位後的波紋還沒播
+      this.waveT = 0;
       this.director = new BM.Director();
       this.state = 'playing';
       this.banner = { text: this.wave === 1 ? 'READY!' : 'WAVE ' + this.wave, sub: this.wave === 1 ? 'WAVE 1' : '', t: 0, dur: 2.0 };
       BM.Audio.playMusic('play');
       BM.Audio.sfx('wave');
+      BM.Audio.sfx('squeak');            // 起司月亮抖動、老鼠準備噴出：「吱吱」
+    }
+
+    // 全隊到位：從陣形中央擴散一圈金色波紋，老鼠依距離依序跳一下
+    startRipple() {
+      const F = C.FORMATION, rows = BM.Waves.plan(this.normalWave).rows;
+      const cx = F.cx, cy = F.baseY + (rows - 1) * F.spacingY / 2;
+      BM.Particles.wave(cx, cy, '#ffe27a', 420);
+      for (const e of this.enemies) {
+        if (e.state === 'formation') e.hopDelay = Math.hypot(e.x - cx, e.y - cy) / 520;
+      }
+      BM.Audio.sfx('ripple');
     }
 
     startBossWave() {
@@ -183,6 +200,16 @@
 
       for (const e of this.enemies) e.update(dt, this);
       if (this.boss) this.boss.update(dt, this);
+
+      // 起司月亮：進場前抖動；老鼠還在噴出時發亮。全隊到位後播一次波紋
+      this.waveT += dt;
+      const emitting = this.state === 'playing' && this.enemies.some(e => e.state === 'wait');
+      BM.Background.moon(this.state === 'playing' && !this.boss && this.waveT < C.ENTRANCE.startDelay ? 1 : 0, emitting ? 1 : 0);
+      if (this.state === 'playing' && !this.rippled && this.enemies.length &&
+          this.enemies.every(e => e.state !== 'wait' && e.state !== 'enter')) {
+        this.rippled = true;
+        this.startRipple();
+      }
 
       // 陣形排好一半以上就開始出擊；玩家死亡期間不出擊
       if (this.state === 'playing' && p.alive) {

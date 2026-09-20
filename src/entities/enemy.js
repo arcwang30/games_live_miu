@@ -1,5 +1,5 @@
 // 老鼠敵機。狀態機：
-//   wait（尚未登場）→ enter（曲線飛入陣形）→ formation（待機）
+//   wait（尚未登場）→ enter（從起司月亮噴出，沿進場隊形飛入陣形，見 systems/entrance.js）→ formation（待機）
 //   → attack（由 BM.AI 控制）→ return（回到陣形）→ formation …
 (function (BM) {
   const C = BM.CONFIG, M = BM.M, W = C.W, PI = Math.PI;
@@ -20,7 +20,6 @@
       this.radius = C.ENEMY.radius;
       this.state = 'wait';
       this.delay = 0;
-      this.side = 1;              // 登場方向：1 從左、-1 從右
       this.x = -100; this.y = -100;
       this.heading = PI / 2;
       this.flash = 0;
@@ -31,16 +30,25 @@
       this.warn = false;          // 衝撞鼠蓄力驚嘆號
       this.tele = 0;              // 狙擊鼠預警光圈
       this.t = 0;
+      this.landT = 0;             // 落位彈跳剩餘時間
+      this.hopDelay = null;       // 波紋跳躍：延遲 / 剩餘時間
+      this.hopT = 0;
     }
 
     get hittable() { return this.state !== 'wait'; }
 
     update(dt, w) {
       if (this.flash > 0) this.flash -= dt;
+      if (this.landT > 0) this.landT -= dt;                  // 落位彈跳
+      if (this.hopDelay !== null) {                          // 全隊到位後的波紋：依距離延遲，輪到時跳一下
+        this.hopDelay -= dt;
+        if (this.hopDelay <= 0) { this.hopDelay = null; this.hopT = 0.3; }
+      }
+      if (this.hopT > 0) this.hopT -= dt;
       switch (this.state) {
         case 'wait':
           this.delay -= dt;
-          if (this.delay <= 0) this.beginEnter();
+          if (this.delay <= 0) this.beginEnter(w);
           break;
         case 'enter': this.updateEnter(dt, w); break;
         case 'formation': {
@@ -54,28 +62,36 @@
       }
     }
 
-    // ---- 登場：從畫面上方角落沿曲線飛入陣形（此時不會傷害玩家，但可以被打）----
-    beginEnter() {
+    // ---- 登場：從起司月亮的洞噴出（由小變大），沿該波的進場隊形飛到陣形位置。
+    //      進場期間不會傷害玩家，但可以被打 ----
+    beginEnter(w) {
       this.state = 'enter';
       this.t = 0;
-      const left = this.side === 1;
-      this.p0 = { x: left ? -30 : W + 30, y: 130 };
-      this.p1 = { x: left ? W * 0.65 : W * 0.35, y: 700 };
+      this.pat = BM.Entrance.PATTERNS[w.entrancePattern || 0];
+      this.p0 = BM.Entrance.spawnPoint();
       this.x = this.p0.x; this.y = this.p0.y;
+      this.popS = 0;
+      BM.Particles.sparkle(this.p0.x, this.p0.y, '#ffe27a', 3);      // 洞口噴出的小火花
+      if ((Enemy.popCount = (Enemy.popCount || 0) + 1) % 4 === 0) w.sfx('pop');
     }
 
     updateEnter(dt, w) {
       this.t += dt;
-      const u = Math.min(1, this.t / C.ENEMY.enterDur);
+      const u = Math.min(1, this.t / this.pat.dur);
       const s = w.formation.slot(this.col, this.row);
-      const pos = M.bezier(this.p0, this.p1, { x: s.x, y: s.y + 190 }, s, u);
+      const pos = this.pat.pos(u, this.p0, s);
       const dx = pos.x - this.x, dy = pos.y - this.y;
       if (dx * dx + dy * dy > 0.01) {
-        const target = M.lerpAngle(Math.atan2(dy, dx), PI / 2, M.smoothstep((u - 0.7) / 0.3));
+        const target = M.lerpAngle(Math.atan2(dy, dx), PI / 2, M.smoothstep((u - 0.8) / 0.2));   // 快到位時轉回正面朝下
         this.heading = M.lerpAngle(this.heading, target, Math.min(1, 14 * dt));
       }
       this.x = pos.x; this.y = pos.y;
-      if (u >= 1) this.state = 'formation';
+      this.popS = M.smoothstep(u / 0.1);                             // 剛出洞時由小變大
+      if (u >= 1) {                                                  // 落位：小彈跳 + 星星閃光
+        this.state = 'formation';
+        this.landT = 0.28;
+        BM.Particles.sparkle(this.x, this.y, '#fff3b0', 3);
+      }
     }
 
     // ---- 攻擊結束回陣形：fromTop=true 表示已飛出畫面，從上方重新進場 ----
@@ -111,7 +127,10 @@
         ctx.restore();
       }
       const name = 'mouse' + this.type + (this.flash > 0 ? '_hit' : '');
-      BM.Sprites.draw(ctx, name, this.x, this.y, this.heading - PI / 2, 1);
+      let sc = this.state === 'enter' ? 0.25 + 0.75 * this.popS : 1;             // 出洞由小變大
+      if (this.landT > 0) sc *= 1 + 0.3 * Math.sin(Math.PI * this.landT / 0.28);  // 落位彈一下
+      const yOff = this.hopT > 0 ? -12 * Math.sin(Math.PI * (1 - this.hopT / 0.3)) : 0;   // 波紋經過時跳一下
+      BM.Sprites.draw(ctx, name, this.x, this.y + yOff, this.heading - PI / 2, sc);
       if (this.warn) {                                       // 衝撞鼠蓄力驚嘆號
         BM.Draw.text(ctx, '!', this.x, this.y - 26, {
           size: 24, align: 'center', color: '#ff4d4d', stroke: '#fff', strokeW: 4, weight: '900', family: BM.Draw.NUM

@@ -17,15 +17,7 @@
     g.fillStyle = gr;
     g.fillRect(0, 0, W, H);
 
-    // 月亮
-    g.fillStyle = 'rgba(255,246,200,0.9)';
-    g.beginPath(); g.arc(440, 170, 36, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(255,246,200,0.18)';
-    g.beginPath(); g.arc(440, 170, 58, 0, Math.PI * 2); g.fill();
-    g.fillStyle = 'rgba(214,200,150,0.55)';
-    for (const m of [[428, 160, 7], [452, 182, 5], [446, 155, 3.5]]) {
-      g.beginPath(); g.arc(m[0], m[1], m[2], 0, Math.PI * 2); g.fill();
-    }
+    // （起司月亮是動態畫的，見 drawMoon）
 
     // 底部小鎮剪影
     g.fillStyle = '#0a1038';
@@ -72,12 +64,43 @@
       }
     },
 
+    // 起司月亮的狀態：shake=進場前抖動（0/1）、glow=正在噴出老鼠時發亮（會平滑過渡）
+    moonShake: 0, moonGlow: 0, moonGlowTarget: 0,
+    moon(shake, glow) { this.moonShake = shake; this.moonGlowTarget = glow; },
+
     update(dt) {
+      this.moonGlow += (this.moonGlowTarget - this.moonGlow) * Math.min(1, 6 * dt);
       for (const s of stars) { s.y += s.v * dt; if (s.y > H) { s.y -= H; s.x = Math.random() * W; } }
       for (const c of clouds) {
         c.y += c.v * dt;
         if (c.y > H + 80) { c.y = -80; c.x = Math.random() * W; }
       }
+    },
+
+    // 起司月亮：黃色的月亮上有幾個洞（老鼠從洞裡噴出來）；噴出時月亮發亮、洞口變深
+    drawMoon(ctx, t) {
+      const m = C.MOON, sh = this.moonShake, gl = this.moonGlow;
+      ctx.save();
+      ctx.translate(m.x + (sh ? Math.sin(t * 70) * 2.6 : 0), m.y + (sh ? Math.cos(t * 63) * 2 : 0));
+      const pulse = gl * (0.7 + 0.3 * Math.sin(t * 12));
+      const halo = ctx.createRadialGradient(0, 0, m.r * 0.8, 0, 0, m.r * 2.1 + pulse * 14);   // 光暈
+      halo.addColorStop(0, 'rgba(255,226,122,' + (0.35 + 0.3 * pulse) + ')');
+      halo.addColorStop(1, 'rgba(255,226,122,0)');
+      ctx.fillStyle = halo;
+      ctx.beginPath(); ctx.arc(0, 0, m.r * 2.1 + pulse * 14, 0, Math.PI * 2); ctx.fill();
+      const body = ctx.createRadialGradient(-10, -12, 4, 0, 0, m.r);                            // 月亮本體（起司黃）
+      body.addColorStop(0, '#fff2ac');
+      body.addColorStop(1, '#ffd456');
+      ctx.fillStyle = body;
+      ctx.beginPath(); ctx.arc(0, 0, m.r, 0, Math.PI * 2); ctx.fill();
+      ctx.lineWidth = 2; ctx.strokeStyle = '#e6a92a'; ctx.stroke();
+      for (const h of m.holes) {                                                                 // 起司的洞
+        ctx.fillStyle = gl > 0.3 ? '#8a5410' : '#e8b640';
+        ctx.beginPath(); ctx.ellipse(h.x, h.y, h.r, h.r * 0.85, 0, 0, Math.PI * 2); ctx.fill();
+        ctx.fillStyle = 'rgba(255,255,255,0.35)';
+        ctx.beginPath(); ctx.ellipse(h.x - h.r * 0.25, h.y - h.r * 0.3, h.r * 0.45, h.r * 0.3, 0, 0, Math.PI * 2); ctx.fill();
+      }
+      ctx.restore();
     },
 
     draw(ctx, t) {
@@ -87,6 +110,8 @@
         ctx.globalAlpha = 0.35 + 0.5 * Math.abs(Math.sin(t * 1.6 + s.tw));
         ctx.fillRect(s.x, s.y, s.r, s.r);
       }
+      ctx.globalAlpha = 1;
+      this.drawMoon(ctx, t);
       for (const c of clouds) BM.Sprites.draw(ctx, 'cloud' + c.k, c.x, c.y, 0, c.s, c.a);
       ctx.globalAlpha = 1;
     }

@@ -31,7 +31,19 @@
     FORMATION: { cols: 15, cx: 270, baseY: 325, spacingX: 31, spacingY: 40, swayAmp: 16,
                  startCount: 45, perWave: 10, maxCount: 90 },
 
-    ENEMY: { radius: 11, bulletRadius: 5, enterDur: 1.75 },
+    ENEMY: { radius: 11, bulletRadius: 5 },
+
+    // 起司月亮：背景的月亮是一塊有洞的起司，老鼠從洞裡噴出來進場。holes 是洞的位置（相對月亮中心）與大小
+    MOON: {
+      x: 440, y: 170, r: 36,
+      holes: [
+        { x: -12, y: -8, r: 7 }, { x: 10, y: -14, r: 5 }, { x: 4, y: 12, r: 8 },
+        { x: -14, y: 14, r: 4.5 }, { x: 17, y: 2, r: 4 }
+      ]
+    },
+
+    // 敵機進場：先等月亮抖動 startDelay 秒，之後每隻間隔 spacing 秒噴出
+    ENTRANCE: { startDelay: 0.9, spacing: 0.038 },
 
     // BOSS「流氓大老鼠」：每 EVERY 波出現一次（第 5、10、15… 波）
     BOSS: {

@@ -22,17 +22,19 @@
 
     // 建立該波的敵機。一列 15 隻，最後一列不滿時置中（欄位可以是半格）。
     // 四種 AI 依 (欄+列)%4 斜線交錯排列，數量幾乎相等。
+    // 進場順序：月亮先抖動 startDelay 秒，接著依序（第一列先）每隻間隔 spacing 秒從洞口噴出。
     spawn(n) {
       const { count, rows } = BM.Waves.plan(n);
+      const E = C.ENTRANCE;
       const list = [];
+      let order = 0;
       for (let r = 0; r < rows; r++) {
         const k = r < rows - 1 ? F.cols : count - F.cols * (rows - 1);   // 這一列的隻數
         const start = (F.cols - k) / 2;
         for (let i = 0; i < k; i++) {
           const e = new BM.Enemy((Math.floor(start) + i + r) % 4, start + i, r);
-          e.side = r % 2 === 0 ? 1 : -1;                       // 奇偶列左右交替登場
-          const idx = e.side === 1 ? i : k - 1 - i;
-          e.delay = 0.5 + r * 0.55 + idx * 0.065;
+          e.delay = E.startDelay + order * E.spacing;
+          order++;
           list.push(e);
         }
       }

@@ -17,6 +17,19 @@
       parts.push({ ring: true, x, y, life: 0, max: 0.35, size: 6, color: '#ffffff' });
     },
 
+    // 小星星火花（沒有外圈，比較輕量；進場噴出 / 落位閃光用）
+    sparkle(x, y, color, n) {
+      for (let i = 0; i < (n || 3); i++) {
+        const a = Math.random() * M.TAU, sp = M.rand(30, 95);
+        parts.push({ x, y, vx: Math.cos(a) * sp, vy: Math.sin(a) * sp, life: 0, max: M.rand(0.3, 0.5), size: M.rand(1.4, 2.8), color });
+      }
+    },
+
+    // 擴散的大波紋（全隊到位時從陣形中央向外擴散）：半徑由 0 長到 maxR
+    wave(x, y, color, maxR) {
+      parts.push({ ring: true, wave: true, x, y, life: 0, max: 0.8, size: maxR, color });
+    },
+
     update(dt) {
       for (const p of parts) {
         p.life += dt;
@@ -31,7 +44,12 @@
       for (const p of parts) {
         const k = 1 - p.life / p.max;
         ctx.globalAlpha = Math.max(0, k);
-        if (p.ring) {
+        if (p.wave) {                                     // 大波紋：半徑隨時間擴張，越外圍越淡越細
+          const rr = p.size * M.easeOutCubic(1 - k);
+          ctx.strokeStyle = p.color; ctx.lineWidth = 7 * k + 1.5;
+          ctx.globalAlpha = Math.max(0, k) * 0.8;
+          ctx.beginPath(); ctx.arc(p.x, p.y, rr, 0, M.TAU); ctx.stroke();
+        } else if (p.ring) {
           ctx.strokeStyle = p.color; ctx.lineWidth = 3 * k + 0.5;
           ctx.beginPath(); ctx.arc(p.x, p.y, p.size + (1 - k) * 30, 0, M.TAU); ctx.stroke();
         } else {
