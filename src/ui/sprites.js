@@ -30,6 +30,19 @@
     store[name + '_hit'] = { c, w: s.w, h: s.h };
   }
 
+  // 把白色貼圖染成另一種顏色（雲在黃昏偏橘粉、黑夜偏冷藍用）：存成 name + suffix
+  function makeTint(name, suffix, color) {
+    const s = store[name];
+    const c = document.createElement('canvas');
+    c.width = s.c.width; c.height = s.c.height;
+    const g = c.getContext('2d');
+    g.drawImage(s.c, 0, 0);
+    g.globalCompositeOperation = 'source-atop';
+    g.fillStyle = color;
+    g.fillRect(0, 0, c.width, c.height);
+    store[name + suffix] = { c, w: s.w, h: s.h };
+  }
+
   function ell(g, x, y, rx, ry, fill, stroke, lw) {
     g.beginPath();
     g.ellipse(x, y, rx, ry, 0, 0, TAU);
@@ -290,6 +303,9 @@
     gr.addColorStop(0.7, '#ff6a3d');
     gr.addColorStop(1, 'rgba(255,60,90,0)');
     g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 9, 0, TAU); g.fill();
+    // 深色外圈：在白天 / 黃昏這種亮背景上，橘紅光球才不會融進天空
+    g.strokeStyle = 'rgba(105,14,44,0.75)'; g.lineWidth = 1.7;
+    g.beginPath(); g.arc(0, 0, 6.6, 0, TAU); g.stroke();
   }
 
   function drawCloud(g, seed) {
@@ -318,7 +334,11 @@
         make('boss_' + f, 250, 250, g => drawBoss(g, f));
         makeFlash('boss_' + f);
       }
-      for (let i = 0; i < 3; i++) make('cloud' + i, 150, 70, g => drawCloud(g, i));
+      for (let i = 0; i < 3; i++) {
+        make('cloud' + i, 150, 70, g => drawCloud(g, i));       // 白色（白天 / 主選單）
+        makeTint('cloud' + i, 'w', '#ffb48c');                  // 暖色（黃昏）
+        makeTint('cloud' + i, 'c', '#a9bcff');                  // 冷藍（黑夜）
+      }
     },
 
     // 主角戰機資訊：display scale 與兩個噴射口（相對於貼圖錨點、scale=1 時的座標）

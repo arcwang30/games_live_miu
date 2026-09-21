@@ -52,7 +52,7 @@
     const g = ctx.createGain();
     g.gain.setValueAtTime(o.v === undefined ? 0.2 : o.v, t0);
     g.gain.exponentialRampToValueAtTime(0.0001, t0 + o.d);
-    src.connect(filt); filt.connect(g); g.connect(sfxBus);
+    src.connect(filt); filt.connect(g); g.connect(o.bus || sfxBus);
     src.start(t0, Math.random() * 0.5);
     src.stop(t0 + o.d + 0.03);
   }
@@ -92,7 +92,85 @@
   };
 
   // ---- 背景音樂（8 分音符步進，lead=方波旋律、bass=三角波低音）----
+  const cat = (...bars) => [].concat(...bars);       // 把每一小節（8 個 8 分音符）接成一整首
+
+  // 黃昏 · 夕陽：C 大調、慢板（108 BPM）。和弦 C–G–Am–Em–F–C–F–G，長音三角波旋律 + 方波琶音 + 輕柔鼓點，帶一點懷舊感
+  const DUSK = {
+    bpm: 108,
+    leadType: 'triangle', leadV: 0.14, leadLen: 3.4,
+    lead: cat(
+      [76, 0, 0, 0, 72, 0, 74, 0],   // C
+      [71, 0, 0, 0, 67, 0, 71, 0],   // G
+      [72, 0, 0, 0, 76, 0, 81, 0],   // Am
+      [79, 0, 0, 0, 76, 0, 71, 0],   // Em
+      [72, 0, 0, 0, 77, 0, 76, 0],   // F
+      [74, 0, 0, 0, 72, 0, 67, 0],   // C
+      [69, 0, 72, 0, 77, 0, 76, 0],   // F
+      [74, 0, 71, 0, 67, 0, 71, 0]),  // G
+    bass: cat(
+      [48, 0, 0, 48, 55, 0, 48, 0],
+      [43, 0, 0, 43, 50, 0, 43, 0],
+      [45, 0, 0, 45, 52, 0, 45, 0],
+      [40, 0, 0, 40, 47, 0, 40, 0],
+      [41, 0, 0, 41, 48, 0, 41, 0],
+      [48, 0, 0, 48, 55, 0, 48, 0],
+      [41, 0, 0, 41, 48, 0, 41, 0],
+      [43, 0, 0, 43, 50, 0, 43, 0]),
+    arp: {
+      type: 'square', v: 0.028, len: 0.95,
+      notes: cat(
+        [60, 64, 67, 72, 67, 64, 67, 64],
+        [59, 62, 67, 71, 67, 62, 67, 62],
+        [60, 64, 69, 72, 69, 64, 69, 64],
+        [59, 64, 67, 71, 67, 64, 67, 64],
+        [60, 65, 69, 72, 69, 65, 69, 65],
+        [60, 64, 67, 72, 67, 64, 67, 64],
+        [60, 65, 69, 72, 69, 65, 69, 65],
+        [59, 62, 67, 71, 67, 62, 67, 62])
+    },
+    drums: ['k', 0, 'h', 0, 's', 0, 'h', 0]
+  };
+
+  // 黑夜 · 星空：E 小調、中快板（136 BPM）。和弦 Em–C–G–D–Am–Em–C–B，跳動的 8 分低音 + 高音玻璃般的星星琶音（正弦波）+ 稀疏的方波旋律，神祕又帶緊張感
+  const NIGHT = {
+    bpm: 136,
+    leadType: 'square', leadV: 0.05, leadLen: 2.2,
+    lead: cat(
+      [71, 0, 0, 74, 76, 0, 0, 0],   // Em
+      [72, 0, 0, 0, 76, 0, 74, 0],   // C
+      [74, 0, 0, 0, 79, 0, 78, 0],   // G
+      [74, 0, 78, 0, 81, 0, 78, 0],   // D
+      [72, 0, 0, 76, 81, 0, 0, 0],   // Am
+      [79, 0, 0, 76, 74, 0, 71, 0],   // Em
+      [76, 0, 79, 0, 84, 0, 79, 0],   // C
+      [75, 0, 78, 0, 83, 0, 78, 0]),  // B7
+    bass: cat(
+      [40, 0, 40, 0, 40, 40, 0, 40],
+      [36, 0, 36, 0, 36, 36, 0, 36],
+      [43, 0, 43, 0, 43, 43, 0, 43],
+      [38, 0, 38, 0, 38, 38, 0, 38],
+      [45, 0, 45, 0, 45, 45, 0, 45],
+      [40, 0, 40, 0, 40, 40, 0, 40],
+      [36, 0, 36, 0, 36, 36, 0, 36],
+      [35, 0, 35, 0, 35, 35, 0, 35]),
+    arp: {
+      type: 'sine', v: 0.08, len: 1.1,
+      notes: cat(
+        [76, 79, 83, 88, 83, 79, 83, 79],
+        [76, 79, 84, 88, 84, 79, 84, 79],
+        [74, 79, 83, 86, 83, 79, 83, 79],
+        [74, 78, 81, 86, 81, 78, 81, 78],
+        [76, 81, 84, 88, 84, 81, 84, 81],
+        [76, 79, 83, 88, 83, 79, 83, 79],
+        [76, 79, 84, 88, 84, 79, 84, 79],
+        [71, 75, 78, 83, 78, 75, 78, 75])
+    },
+    drums: ['k', 0, 'h', 'k', 's', 0, 'h', 'h']
+  };
+
   const TRACKS = {
+    dusk: DUSK,
+    night: NIGHT,
     menu: {
       bpm: 128,
       lead: [76, 79, 84, 79, 76, 79, 84, 79,   77, 81, 84, 81, 77, 81, 84, 81,
@@ -123,11 +201,20 @@
     while (nextTime < ctx.currentTime + 0.25) {
       const i = step % T.lead.length;
       const delay = Math.max(0, nextTime - ctx.currentTime);
-      if (T.lead[i]) tone({ type: 'square', f: mtof(T.lead[i]), d: stepDur * 0.85, v: 0.07, bus: musBus, delay });
+      if (T.lead[i]) tone({ type: T.leadType || 'square', f: mtof(T.lead[i]), d: stepDur * (T.leadLen || 0.85), v: T.leadV || 0.07, bus: musBus, delay });
       if (T.bass[i]) tone({ type: 'triangle', f: mtof(T.bass[i]), d: stepDur * 0.95, v: 0.16, bus: musBus, delay });
+      if (T.arp && T.arp.notes[i % T.arp.notes.length]) tone({ type: T.arp.type, f: mtof(T.arp.notes[i % T.arp.notes.length]), d: stepDur * T.arp.len, v: T.arp.v, bus: musBus, delay });
+      if (T.drums) drum(T.drums[i % T.drums.length], delay);
       step++;
       nextTime += stepDur;
     }
+  }
+
+  // 輕量鼓組（只有新增的黃昏 / 黑夜曲子用）：k 大鼓、s 小鼓、h 汽鈴
+  function drum(kind, delay) {
+    if (kind === 'k') tone({ type: 'sine', f: 150, f2: 45, d: 0.13, v: 0.22, bus: musBus, delay });
+    else if (kind === 's') noise({ d: 0.1, v: 0.08, f: 3600, bus: musBus, delay });
+    else if (kind === 'h') noise({ d: 0.04, v: 0.035, f: 9000, bus: musBus, delay });
   }
 
   function startTrack(name) {

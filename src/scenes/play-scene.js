@@ -6,9 +6,10 @@
 
   class PlayScene {
     enter() {
-      BM.Audio.playMusic('play');
+      BM.Audio.playMusic(this.musicFor(1));
       BM.Particles.clear();
       BM.Popups.clear();
+      BM.Background.setPhase(BM.Background.phaseFor(1), { instant: true });   // 一開始是白天
       BM.Background.update(0);
 
       this.formation = BM.Formation;
@@ -33,7 +34,11 @@
       BM.Touch.setMode('play');       // 一進入遊戲就啟用觸控介面（不用等第一格更新）
       this.startWave();
     }
-    exit() { BM.Touch.setMode('none'); BM.Background.moon(0, 0); }
+    exit() {
+      BM.Touch.setMode('none');
+      BM.Background.moon(0, 0);
+      BM.Background.setPhase('menu', { instant: true });     // 回到主選單原本的深藍夜空
+    }
 
     // ------------------------------------------------ 提供給 AI / 玩家的介面
     firePlayer(x, y) {
@@ -54,6 +59,8 @@
       this.params = BM.Waves.params(this.wave);
       this.formation.reset();
       this.eBullets.length = 0;
+      // 晝夜：確認目前波數對應的時段（通常打敗 BOSS 時已經開始轉場了，這裡是保險）
+      BM.Background.setPhase(BM.Background.phaseFor(this.wave), { duration: C.DAYNIGHT.transition, progress: this.phaseProgress(this.wave) });
       if (this.wave % C.BOSS.EVERY === 0) { this.startBossWave(); return; }   // 每 5 波出現一次 BOSS
 
       this.boss = null;
@@ -66,10 +73,16 @@
       this.director = new BM.Director();
       this.state = 'playing';
       this.banner = { text: this.wave === 1 ? 'READY!' : 'WAVE ' + this.wave, sub: this.wave === 1 ? 'WAVE 1' : '', t: 0, dur: 2.0 };
-      BM.Audio.playMusic('play');
+      BM.Audio.playMusic(this.musicFor(this.wave));
       BM.Audio.sfx('wave');
       BM.Audio.sfx('squeak');            // 起司月亮抖動、老鼠準備噴出：「吱吱」
     }
+
+    // 一般波的背景音樂跟著時段走：白天 = 原本的曲子、黃昏 = 慢板懷舊曲、黑夜 = 星空曲（BOSS 波固定用 BOSS 曲）
+    musicFor(wave) { return { day: 'play', dusk: 'dusk', night: 'night' }[BM.Background.phaseFor(wave)] || 'play'; }
+
+    // 第 wave 波在目前時段裡的進度（0 = 時段的第一波、1 = 最後一波）：黃昏的起司球光芒會隨進度一波比一波弱
+    phaseProgress(wave) { const n = C.DAYNIGHT.every; return ((wave - 1) % n) / (n - 1); }
 
     // 全隊到位：從陣形中央擴散一圈金色波紋，老鼠依距離依序跳一下
     startRipple() {
@@ -100,6 +113,8 @@
       this.stateT = 2.8;
       this.banner = { text: text || 'WAVE CLEAR!', sub: (sub ? sub + '　' : '') + L('banner.bonus', { n: bonus }), t: 0, dur: 2.6 };
       BM.Audio.sfx('clear');
+      // 下一波如果是新的時段（每 5 波換一次，也就是打敗 BOSS 之後），現在就開始平滑轉場：白天→黃昏→黑夜→白天…
+      BM.Background.setPhase(BM.Background.phaseFor(this.wave + 1), { duration: C.DAYNIGHT.transition, progress: this.phaseProgress(this.wave + 1) });
     }
 
     // ---- BOSS 事件（由 Boss 呼叫）----
@@ -136,8 +151,7 @@
     }
 
     finish() {
-      const rank = BM.Storage.submit(this.score);
-      BM.Game.setScene('gameover', { score: this.score, rank });
+      BM.Game.setScene('gameover', { score: this.score, wave: this.wave });   // 進榜與簽名交給結算畫面處理
     }
 
     addScore(n) {

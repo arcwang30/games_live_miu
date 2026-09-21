@@ -229,21 +229,28 @@
 
     drawRanking(ctx, t) {
       this.panel(ctx, L('ranking.title'));
-      const list = BM.Storage.list().slice(0, 5);
-      const medal = ['#ffd166', '#cfd6e6', '#e0a070', '#8fa0d0', '#8fa0d0'];
-      for (let i = 0; i < 5; i++) {
-        const y = 230 + i * 100, e = list[i];
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        D.roundRect(ctx, 60, y - 38, W - 120, 76, 16); ctx.fill();
-        D.text(ctx, String(i + 1), 100, y, { size: 44, align: 'center', color: medal[i], stroke: '#1b1240', strokeW: 6, family: D.NUM, weight: '900' });
+      const list = BM.Storage.list();                       // 前 20 名：名次 / 簽名 / 分數 / 結束時的波數
+      const N = BM.Storage.MAX, y0 = 226, gap = 29;
+      const medal = ['#ffd166', '#cfd6e6', '#e0a070'];
+      const head = { size: 13, color: '#8fa0d0', family: D.NUM, weight: '900' };
+      D.text(ctx, '#', 84, 192, Object.assign({ align: 'right' }, head));
+      D.text(ctx, 'NAME', 112, 192, head);
+      D.text(ctx, 'SCORE', 216, 192, head);
+      D.text(ctx, 'WAVE', 448, 192, Object.assign({ align: 'right' }, head));
+      for (let i = 0; i < N; i++) {
+        const y = y0 + i * gap, e = list[i];
+        if (i % 2 === 0) { ctx.fillStyle = 'rgba(255,255,255,0.07)'; D.roundRect(ctx, 44, y - 14, W - 88, 28, 8); ctx.fill(); }
+        D.text(ctx, String(i + 1), 84, y, { size: 22, align: 'right', color: medal[i] || '#8fa0d0', family: D.NUM, weight: '900' });
         if (e) {
-          D.text(ctx, M.pad(e.score, 8), 150, y - 6, { size: 34, color: '#fff', stroke: '#1b1240', strokeW: 5, family: D.NUM, weight: '900' });
-          D.text(ctx, e.date, 150, y + 24, { size: 14, color: '#9fb0e8', family: D.NUM });
+          D.text(ctx, e.name || '----', 112, y, { size: 22, color: i < 3 ? medal[i] : '#ffe9b0', family: D.NUM, weight: '900' });
+          D.text(ctx, M.pad(e.score, 8), 216, y, { size: 22, color: '#fff', family: D.NUM, weight: '900' });
+          D.text(ctx, e.wave ? String(e.wave) : '--', 448, y, { size: 22, align: 'right', color: '#9ff3ff', family: D.NUM, weight: '900' });
         } else {
-          D.text(ctx, '--------', 150, y, { size: 30, color: '#5b688f', family: D.NUM, weight: '900' });
+          D.text(ctx, '----', 112, y, { size: 22, color: '#4a5580', family: D.NUM, weight: '900' });
+          D.text(ctx, '--------', 216, y, { size: 22, color: '#4a5580', family: D.NUM, weight: '900' });
         }
       }
-      if (!list.length) D.text(ctx, L('ranking.empty'), W / 2, 790, { size: 20, align: 'center', color: '#bcd0ff', maxW: 420 });
+      if (!list.length) D.text(ctx, L('ranking.empty'), W / 2, 800, { size: 18, align: 'center', color: '#bcd0ff', maxW: 420 });
       D.button(ctx, L('nav.back'), BACK.x, BACK.y, BACK.w, BACK.h, false, t);
     }
 

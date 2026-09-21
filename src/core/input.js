@@ -14,6 +14,10 @@
   let pendingClick = null;
   let pendingMove = false;
   let keyActivity = false;
+  let typedNow = [];                       // 這個 frame 敲下的英數字（簽名用）
+  let padEdges = [];                       // 這個 frame 剛按下的手把按鈕
+  const navHold = { up: 0, down: 0, left: 0, right: 0 };   // 方向鍵 / 十字鍵按住的起始時間（連發用）
+  const NAV_DELAY = 400, NAV_RATE = 90;    // 按住多久開始連發、連發間隔（毫秒）
 
   function readPad() {
     const list = navigator.getGamepads ? navigator.getGamepads() : [];
@@ -40,6 +44,10 @@
       up: false, down: false, left: false, right: false,
       mute: false, fullscreen: false
     },
+    // 簽名輸入用（只有簽名畫面會用到）：
+    textMode: false,       // true 時鍵盤字母不會觸發 M 靜音 / F 全螢幕
+    typed: [],             // 本 frame 敲下的英數字（'A'~'Z'、'0'~'9'；含主鍵盤與數字鍵盤）
+    nav: { up: false, down: false, left: false, right: false },   // 只含「方向鍵 + 手把方向」（不含 WASD，WASD 是字母），按住會連發
     pad: null,
     usingPad: false,
     pointer: { x: -1, y: -1 },
@@ -53,6 +61,10 @@
         if (!e.repeat) justDown[e.code] = true;
         held[e.code] = true;
         keyActivity = true;
+        if (!e.repeat && !e.ctrlKey && !e.metaKey && !e.altKey) {
+          const m = /^(?:Key([A-Z])|Digit([0-9])|Numpad([0-9]))$/.exec(e.code);
+          if (m) typedNow.push(m[1] || m[2] || m[3]);
+        }
         BM.Touch.disable();          // 用鍵盤就關掉觸控介面與自動連射
         BM.Audio.unlock();
       });
@@ -106,7 +118,8 @@
 
       const padEdge = i => !!cur[i] && !padPrev[i];
       let anyPadEdge = false;
-      for (let i = 0; i < cur.length; i++) if (padEdge(i)) anyPadEdge = true;
+      padEdges = [];
+      for (let i = 0; i < cur.length; i++) if (padEdge(i)) { anyPadEdge = true; padEdges[i] = true; }
       if (anyPadEdge) { BM.Audio.unlock(); BM.Touch.disable(); }   // 用手把就關掉觸控介面
 
       // 鍵盤移動
@@ -133,8 +146,21 @@
       P.down = jd('ArrowDown') || jd('KeyS') || se('down');
       P.left = jd('ArrowLeft') || jd('KeyA') || se('left');
       P.right = jd('ArrowRight') || jd('KeyD') || se('right');
-      P.mute = jd('KeyM');
-      P.fullscreen = jd('KeyF');
+      P.mute = jd('KeyM') && !this.textMode;
+      P.fullscreen = jd('KeyF') && !this.textMode;
+
+      // 方向鍵 + 手把方向（不含 WASD）：邊緣觸發，按住一小段時間後連發
+      const now = performance.now(), N = this.nav;
+      const dirHeld = { up: !!held.ArrowUp || stick.up, down: !!held.ArrowDown || stick.down, left: !!held.ArrowLeft || stick.left, right: !!held.ArrowRight || stick.right };
+      for (const d of ['up', 'down', 'left', 'right']) {
+        const key = 'Arrow' + d[0].toUpperCase() + d.slice(1);
+        const edge = jd(key) || se(d);
+        if (!dirHeld[d]) { navHold[d] = 0; N[d] = false; continue; }
+        if (edge || !navHold[d]) { navHold[d] = now + NAV_DELAY; N[d] = true; }
+        else if (now >= navHold[d]) { navHold[d] = now + NAV_RATE; N[d] = true; }
+        else N[d] = false;
+      }
+      this.typed = typedNow; typedNow = [];
 
       if (keyActivity) this.usingPad = false;
       else if (anyPadEdge || Math.abs(px) + Math.abs(py) > 0.5) this.usingPad = true;
@@ -144,6 +170,9 @@
       padPrev = cur;
       stickPrev = stick;
     },
+
+    key(code) { return !!justDown[code]; },          // 這個 frame 剛按下的鍵盤按鍵（KeyboardEvent.code）
+    padPressed(i) { return !!padEdges[i]; },          // 這個 frame 剛按下的手把按鈕（標準對應：0 = A、1 = B、9 = Start）
 
     endFrame() {
       for (const k in justDown) delete justDown[k];

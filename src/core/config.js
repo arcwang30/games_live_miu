@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.21d',
+    VERSION: '2026.09.21j',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -12,7 +12,7 @@
     MAX_SCORE: 9999999,      // 積分最高 7 位數
     MAX_HISCORE: 99999999,   // 排行榜最高 8 位數
     START_LIVES: 3,          // 預備戰機數（不含畫面中的那一台）
-    MAX_LIVES: 5,
+    MAX_LIVES: 99,           // 預備機數上限（HUD 最多畫 5 隻圖示，超過的用「戰機圖 +N」顯示）
     EXTRA_LIFE_EVERY: 30000, // 每 3 萬分加一台
 
     PLAYER: {
@@ -45,6 +45,10 @@
         { x: -14, y: 14, r: 4.5 }, { x: 17, y: 2, r: 4 }
       ]
     },
+
+    // 晝夜變化：每 every 個波段換一次，依 order 循環（第 1~5 波白天、6~10 黃昏、11~15 黑夜、16~20 又回到白天…）。
+    // 打敗 BOSS（每 5 波的最後一波）後開始轉場，轉場約 transition 秒。
+    DAYNIGHT: { every: 5, order: ['day', 'dusk', 'night'], transition: 5 },
 
     // 敵機進場：先等月亮抖動 startDelay 秒，之後每隻間隔 spacing 秒噴出
     ENTRANCE: { startDelay: 0.9, spacing: 0.038 },
