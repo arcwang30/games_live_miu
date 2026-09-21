@@ -168,7 +168,6 @@
       this.stateT = 2.8;
       this.banner = { text: text || 'WAVE CLEAR!', sub: (sub ? sub + '　' : '') + L('banner.bonus', { n: bonus }), t: 0, dur: 2.6 };
       BM.Audio.sfx('clear');
-      for (const g of this.golds) g.leave();                        // 過關了，金必鼠也飛走
       // 下一波如果是新的時段（每 5 波換一次，也就是打敗 BOSS 之後），現在就開始平滑轉場：白天→黃昏→黑夜→白天…
       BM.Background.setPhase(BM.Background.phaseFor(this.wave + 1), { duration: C.DAYNIGHT.transition, progress: this.phaseProgress(this.wave + 1) });
     }
