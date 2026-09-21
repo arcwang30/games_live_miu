@@ -30,6 +30,9 @@
       this.lock = 0.6;                                // 這個時間之前不接受操作，避免玩家還在狂按時誤觸
       this.slots = new Array(SLOTS).fill('');
       this.cur = 0;
+      this.entry = null;                              // 這局送出的那一筆（榜單更新後用它重新找名次）
+      this.ver = -1;
+      BM.Storage.refresh();                           // 重新取得雲端榜單（結算時顯示最新的前 5 名）
       this.phase = 'result';
       if (S.qualifies(this.score)) {                  // 進榜 → 先簽名
         this.phase = 'entry';
@@ -76,6 +79,7 @@
     submit() {
       this.name = this.slots.map(s => s || ' ').join('');
       this.rank = S.submit(this.score, this.wave, this.name);
+      this.entry = S.lastEntry;
       this.name = (this.rank >= 0 && S.list()[this.rank].name) || '';
       this.phase = 'result';
       I.textMode = false;
@@ -120,6 +124,10 @@
 
     updateResult() {
       const P = I.pressed;
+      if (this.entry && S.version !== this.ver) {                        // 雲端榜單更新了：在新榜單裡重新找這一筆的名次
+        this.ver = S.version;
+        this.rank = S.rankOf(this.entry);
+      }
       if (P.up || P.down) { this.idx = 1 - this.idx; BM.Audio.sfx('move'); }
       for (let i = 0; i < ITEMS.length; i++) {
         const hit = p => p && Math.abs(p.x - W / 2) < BTN.w / 2 && Math.abs(p.y - this.btnY(i)) < BTN.h / 2;
@@ -213,6 +221,8 @@
       // 前 5 名；如果我排在 5 名之外（6~20 名），另外在下方加一列顯示我的名次
       const list = S.list().slice(0, 20);
       D.text(ctx, L('go.board'), W / 2, 432, { size: 20, align: 'center', color: '#bcd0ff', weight: '900', maxW: 300 });
+      const st = S.status;                                                // 全球排行榜 / 同步中 / 離線
+      D.text(ctx, L('ranking.sync.' + (st === 'idle' ? 'loading' : st)), W - 50, 432, { size: 13, align: 'right', color: st === 'offline' ? '#ffb38a' : '#9fb0e8', maxW: 150 });
       for (let i = 0; i < 5; i++) this.row(ctx, 476 + i * 42, i, list[i], i === this.rank);
       if (this.rank >= 5) {
         D.text(ctx, '⋮', W / 2, 674, { size: 20, align: 'center', color: '#8fa0d0', weight: '900' });

@@ -55,6 +55,7 @@
       'sign.hint.kb': '直接打字 A–Z、0–9　Backspace 刪除　↑ ↓ 換字　← → 換格　Enter 送出',
       'sign.hint.pad': '↑ ↓ 換字　← → 換格　A 確定這格　B 退格　Start 送出',
       'sign.hint.touch': '點下方鍵盤輸入簽名　點格子選位置　⌫ 刪除　OK 送出',
+      'ranking.sync.loading': '同步中…', 'ranking.sync.ok': '全球排行榜', 'ranking.sync.offline': '離線・顯示本機紀錄',
       // 暫停
       'pause.title': '暫停', 'pause.resume': '繼續遊戲', 'pause.menu': '回主選單',
       'pause.hint': 'Esc / P / Start 繼續', 'pause.hint.touch': '點一下選項',
@@ -105,6 +106,7 @@
       'sign.hint.kb': 'A–Z、0–9 を入力　Backspace 削除　↑ ↓ 文字　← → 枠移動　Enter 決定',
       'sign.hint.pad': '↑ ↓ 文字　← → 枠移動　A この枠を決定　B 戻る　Start 決定',
       'sign.hint.touch': '下のキーボードで入力　枠をタップで選択　⌫ 削除　OK 決定',
+      'ranking.sync.loading': '同期中…', 'ranking.sync.ok': '世界ランキング', 'ranking.sync.offline': 'オフライン・本体の記録を表示',
       'pause.title': 'ポーズ', 'pause.resume': 'ゲームに戻る', 'pause.menu': 'メインメニューへ',
       'pause.hint': 'Esc / P / Start で再開', 'pause.hint.touch': 'タップして選択',
       'banner.bosswarn': 'BOSS  ギャング大ネズミ 襲来', 'banner.bonus': 'クリアボーナス +{n}', 'banner.bossdown': 'ボス撃破 +{n}',
@@ -153,6 +155,7 @@
       'sign.hint.kb': 'Type A–Z, 0–9   Backspace: delete   Up/Down: letter   Left/Right: slot   Enter: submit',
       'sign.hint.pad': 'Up/Down: letter   Left/Right: slot   A: confirm slot   B: back   Start: submit',
       'sign.hint.touch': 'Tap the keys below   Tap a box to select   ⌫ delete   OK submit',
+      'ranking.sync.loading': 'Syncing…', 'ranking.sync.ok': 'Global ranking', 'ranking.sync.offline': 'Offline – showing local records',
       'pause.title': 'PAUSE', 'pause.resume': 'Resume', 'pause.menu': 'Main menu',
       'pause.hint': 'Esc / P / Start: resume', 'pause.hint.touch': 'Tap an option',
       'banner.bosswarn': 'BOSS  Gangster Rat incoming', 'banner.bonus': 'Clear bonus +{n}', 'banner.bossdown': 'Boss defeated +{n}',

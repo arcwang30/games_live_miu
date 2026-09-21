@@ -1,5 +1,7 @@
 // 進入點：建立貼圖、載入圖片素材、註冊場景、顯示主選單
 (function (BM) {
+  BM.Cloud.init();               // 雲端排行榜（沒有網路 / SDK 載入失敗時自動改用本機）
+  BM.Storage.init();             // 補傳上次沒傳成功的成績、取得榜單
   BM.Sprites.init();
   BM.Background.init();
 

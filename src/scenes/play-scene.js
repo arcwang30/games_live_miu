@@ -23,6 +23,7 @@
       this.score = 0;
       this.reserve = C.START_LIVES;
       this.nextExtra = C.EXTRA_LIFE_EVERY;
+      BM.Storage.refresh();            // 重新取得雲端榜單（HI-SCORE 是全球最高分；結算時判斷是否進榜也用它）
       this.hiBase = BM.Storage.best();
       this.wave = 0;
       this.time = 0;

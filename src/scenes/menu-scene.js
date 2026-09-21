@@ -56,7 +56,10 @@
     choose(i) {
       BM.Audio.sfx('select');
       if (i === 0) BM.Game.setScene('play');
-      else { this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0; }
+      else {
+        this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0;
+        if (this.mode === 'ranking') BM.Storage.refresh();          // 進排行榜時重新取得雲端榜單
+      }
     }
 
     goMain() { this.mode = 'main'; BM.Audio.sfx('move'); }
@@ -232,6 +235,7 @@
       const list = BM.Storage.list();                       // 前 20 名：名次 / 簽名 / 分數 / 結束時的波數
       const N = BM.Storage.MAX, y0 = 226, gap = 29;
       const medal = ['#ffd166', '#cfd6e6', '#e0a070'];
+      D.text(ctx, L('ranking.sync.' + (BM.Storage.status === 'idle' ? 'loading' : BM.Storage.status)), W / 2, 158, { size: 15, align: 'center', color: BM.Storage.status === 'offline' ? '#ffb38a' : '#9fb0e8', maxW: 420 });   // 全球排行榜 / 同步中 / 離線
       const head = { size: 13, color: '#8fa0d0', family: D.NUM, weight: '900' };
       D.text(ctx, '#', 84, 192, Object.assign({ align: 'right' }, head));
       D.text(ctx, 'NAME', 112, 192, head);
