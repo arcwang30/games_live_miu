@@ -1,6 +1,6 @@
 // 手機 / 平板觸控操作（戰機跟在手指上方）：
 //   - 按住畫面：手指位置出現虛擬搖桿圓盤，戰機會飛到圓盤「正上方」並 1:1 跟著手指移動，
-//     所以戰機永遠在手指上方，不會被手指或圓盤擋住
+//     所以戰機永遠在手指上方，不會被手指或圓盤擋住（還沒按住畫面時不顯示任何虛擬按鈕）
 //   - 放開後點擊新的位置：戰機會快速飛到新位置上方的定點（就算手指很快放開，也會飛到定點才停）
 //   - 觸控模式下子彈自動連射（Input.fire 直接為 true），玩家只要操作位置
 //   - 右上角暫停按鈕：按下後開啟暫停選單
@@ -139,30 +139,30 @@
       if (!T.enabled || T.mode !== 'play') return;
       const s = T.stick;
 
-      // 虛擬搖桿圓盤：按住時畫在手指位置（戰機就在它的正上方）；沒按時在左下角畫一個淡淡的提示圓盤
-      const cx = s.active ? M.clamp(s.fx, RING + 10, W - RING - 10) : HINT.x;
-      const cy = s.active ? s.fy : HINT.y;
-      const a = s.active ? 1 : (T.used ? 0.16 : 0.34);
-      ctx.save();
-      ctx.globalAlpha = a;
-      ctx.beginPath(); ctx.arc(cx, cy, RING, 0, M.TAU);
-      ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke();
-      ctx.beginPath(); ctx.arc(cx, cy, RING * 0.6, 0, M.TAU);
-      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
-      ctx.fillStyle = 'rgba(255,255,255,0.55)';                       // 上下左右的小三角
-      for (let k = 0; k < 4; k++) {
-        ctx.save(); ctx.translate(cx, cy); ctx.rotate(k * Math.PI / 2);
-        ctx.beginPath(); ctx.moveTo(RING - 6, 0); ctx.lineTo(RING - 16, -6); ctx.lineTo(RING - 16, 6); ctx.closePath(); ctx.fill();
+      // 虛擬搖桿圓盤：只在按住畫面時畫在手指位置（戰機就在它的正上方）；還沒按住時不顯示任何虛擬按鈕
+      if (s.active) {
+        const cx = M.clamp(s.fx, RING + 10, W - RING - 10);
+        const cy = s.fy;
+        ctx.save();
+        ctx.beginPath(); ctx.arc(cx, cy, RING, 0, M.TAU);
+        ctx.fillStyle = 'rgba(255,255,255,0.10)'; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.stroke();
+        ctx.beginPath(); ctx.arc(cx, cy, RING * 0.6, 0, M.TAU);
+        ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.25)'; ctx.stroke();
+        ctx.fillStyle = 'rgba(255,255,255,0.55)';                       // 上下左右的小三角
+        for (let k = 0; k < 4; k++) {
+          ctx.save(); ctx.translate(cx, cy); ctx.rotate(k * Math.PI / 2);
+          ctx.beginPath(); ctx.moveTo(RING - 6, 0); ctx.lineTo(RING - 16, -6); ctx.lineTo(RING - 16, 6); ctx.closePath(); ctx.fill();
+          ctx.restore();
+        }
+        const g = ctx.createRadialGradient(cx - 5, cy - 6, 3, cx, cy, KNOB);   // 搖桿頭（在圓盤中心 = 手指位置）
+        g.addColorStop(0, 'rgba(200,245,255,0.95)');
+        g.addColorStop(1, 'rgba(90,200,255,0.75)');
+        ctx.beginPath(); ctx.arc(cx, cy, KNOB, 0, M.TAU);
+        ctx.fillStyle = g; ctx.fill();
+        ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
         ctx.restore();
       }
-      const g = ctx.createRadialGradient(cx - 5, cy - 6, 3, cx, cy, KNOB);   // 搖桿頭（在圓盤中心 = 手指位置）
-      g.addColorStop(0, s.active ? 'rgba(200,245,255,0.95)' : 'rgba(255,255,255,0.85)');
-      g.addColorStop(1, s.active ? 'rgba(90,200,255,0.75)' : 'rgba(255,255,255,0.45)');
-      ctx.beginPath(); ctx.arc(cx, cy, KNOB, 0, M.TAU);
-      ctx.fillStyle = g; ctx.fill();
-      ctx.lineWidth = 3; ctx.strokeStyle = 'rgba(255,255,255,0.9)'; ctx.stroke();
-      ctx.restore();
 
       // 新點擊位置的提示圈：標出戰機即將飛去的定點
       const pk = (performance.now() - T.pulseAt) / 1000 / PULSE_TIME;

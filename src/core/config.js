@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.21j',
+    VERSION: '2026.09.21l',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
