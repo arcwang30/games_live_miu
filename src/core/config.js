@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.21s',
+    VERSION: '2026.09.21t',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -36,6 +36,18 @@
                  startCount: 45, perWave: 10, maxCount: 90 },
 
     ENEMY: { radius: 11, bulletRadius: 5 },
+
+    // 金必鼠：稀有加分鼠（不在陣形裡、不攻擊）。在畫面最上方的 zone 範圍徘徊 stay 秒後飛走；要打中 hp 發才會爆炸。
+    // 出現機率：第 firstWave 波起，每個一般波 chance；連續沒出現，每波再加 chanceStep（上限 chanceMax）；BOSS 波不出現。出現時間 = 該波開始後 appear 秒
+    GOLD: {
+      hp: 11,                              // 打中 11 發才會爆炸（「超過 10 發」）
+      points: 3000, capBonus: 2000,        // 擊落得分；預備機已滿時改給的額外分數
+      stay: 12,                            // 徘徊秒數（從飛進範圍開始算）
+      firstWave: 3, chance: 0.10, chanceStep: 0.03, chanceMax: 0.30,
+      appear: [7, 16],
+      zone: { x0: 50, x1: 490, y0: 175, y1: 290 },   // 徘徊範圍（陣形上緣 y≈314，所以不會往下飛進陣形）
+      speed: 210, dash: 380                // 一般 / 急衝的最高速度（像素/秒）
+    },
 
     // 起司月亮：背景的月亮是一塊有洞的起司，老鼠從洞裡噴出來進場。holes 是洞的位置（相對月亮中心）與大小
     MOON: {

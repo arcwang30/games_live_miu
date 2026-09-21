@@ -289,16 +289,19 @@
     }
 
     drawEnemies(ctx, t) {
-      for (let i = 0; i < 4; i++) {
-        const y = 310 + i * 112;
-        ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        D.roundRect(ctx, 56, y - 48, W - 112, 96, 16); ctx.fill();
-        BM.Sprites.draw(ctx, 'mouse' + i, 112, y, Math.sin(t * 2 + i) * 0.2, 1.9);
-        D.text(ctx, L('enemy.' + i + '.name'), 172, y - 24, { size: 24, color: BM.Enemy.TYPES[i].color, stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 300 });
+      const names = ['#d5d8e6', '#6fe6d8', '#ff8585', '#c9a4ff', '#ffd23f'];      // 名稱顏色（第 5 個是金必鼠）
+      for (let i = 0; i < 5; i++) {
+        const y = 290 + i * 98;
+        const gold = i === 4;
+        ctx.fillStyle = gold ? 'rgba(255,210,80,0.14)' : 'rgba(255,255,255,0.08)';
+        D.roundRect(ctx, 56, y - 43, W - 112, 86, 16); ctx.fill();
+        if (gold) { ctx.strokeStyle = 'rgba(255,210,80,0.55)'; ctx.lineWidth = 2; ctx.stroke(); }
+        BM.Sprites.draw(ctx, gold ? 'mouseGold' : 'mouse' + i, 112, y, Math.sin(t * 2 + i) * 0.2, 1.9);
+        D.text(ctx, L('enemy.' + i + '.name'), 172, y - 22, { size: 24, color: names[i], stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 300 });
         const lines = D.wrap(ctx, L('enemy.' + i + '.desc'), 300, 15);
         for (let k = 0; k < Math.min(2, lines.length); k++) D.text(ctx, lines[k], 172, y + 4 + k * 21, { size: 15, color: '#e6ecff' });
       }
-      D.text(ctx, L('enemy.x2'), W / 2, 790, { size: 17, align: 'center', color: '#ffe27a', weight: '900', maxW: 420 });
+      D.text(ctx, L('enemy.x2'), W / 2, 780, { size: 17, align: 'center', color: '#ffe27a', weight: '900', maxW: 420 });
     }
 
     // ---- 設定：由左至右「語言」「了解歷史」「CREDIT」三個頁籤（預設停在「語言」）----

@@ -35,6 +35,7 @@
       'enemy.2.name': '衝撞鼠', 'enemy.2.desc': '蓄力後追蹤衝撞，橫向閃避即可',
       'enemy.3.name': '旋轉鼠', 'enemy.3.desc': '迴旋一圈半後俯衝，發射三向散彈',
       'enemy.x2': '出擊中的敵機分數 ×2！',
+      'enemy.4.name': '金必鼠', 'enemy.4.desc': '稀有！在畫面上方徘徊，限時飛走。打中 11 發才會爆炸：高分＋1 台預備機', 'gold.appear': '金必鼠出現！',
       // 設定（三個頁籤，由左至右：語言 / 了解歷史 / CREDIT；「了解歷史」內含 3 個分頁 about.0~2）
       'settings.title': '設定', 'tab.credit': 'CREDIT', 'tab.language': '語言', 'tab.history': '了解歷史',
       'lang.hint': '選擇後立即套用',
@@ -90,6 +91,7 @@
       'enemy.2.name': '突撃ネズミ', 'enemy.2.desc': '溜めてから追尾突撃。横に避ければOK',
       'enemy.3.name': '回転ネズミ', 'enemy.3.desc': '1.5回転してから急降下し、3方向に散弾',
       'enemy.x2': '出撃中の敵は得点2倍！',
+      'enemy.4.name': '金必ネズミ', 'enemy.4.desc': 'レア！画面上部を漂い、時間が来ると飛び去る。11発当てると爆発：高得点＋残機1', 'gold.appear': '金必ネズミ出現！',
       'settings.title': '設定', 'tab.credit': 'CREDIT', 'tab.language': '言語', 'tab.history': '歴史を知る',
       'lang.hint': '選ぶとすぐに切り替わります',
       'credit.planning': '企画', 'credit.programming': 'プログラム', 'credit.art': 'アート', 'credit.music': '音楽', 'credit.thanks': 'スペシャルサンクス',
@@ -139,6 +141,7 @@
       'enemy.2.name': 'Rammer Mouse', 'enemy.2.desc': 'Charges up, then homes in. Just sidestep it',
       'enemy.3.name': 'Spinner Mouse', 'enemy.3.desc': 'Loops 1.5 times, dives, then fires a 3-way spread',
       'enemy.x2': 'Attacking enemies score ×2!',
+      'enemy.4.name': 'Jackpot Mouse', 'enemy.4.desc': 'Rare! Hovers at the top, then flies off. Takes 11 hits: big score + 1 extra ship', 'gold.appear': 'Jackpot Mouse!',
       'settings.title': 'SETTINGS', 'tab.credit': 'CREDIT', 'tab.language': 'Language', 'tab.history': 'Learn History',
       'lang.hint': 'Applied immediately',
       'credit.planning': 'Planning', 'credit.programming': 'Programming', 'credit.art': 'Art', 'credit.music': 'Music', 'credit.thanks': 'Special Thanks',

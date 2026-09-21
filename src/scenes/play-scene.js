@@ -24,6 +24,9 @@
       this.reserve = C.START_LIVES;
       this.extraN = 1;                                     // 下一台加命是第幾台
       this.nextExtra = this.extraAt(1);                    // 下一台加命需要的分數
+      this.golds = [];                                     // 場上的金必鼠（最多 1 隻）
+      this.goldAt = null;                                  // 這一波金必鼠要在第幾秒出現（null = 這波不出現）
+      this.goldMiss = 0;                                   // 連續幾個一般波沒有安排金必鼠（出現機率的保底）
       BM.Storage.refresh();            // 重新取得雲端榜單（HI-SCORE 是全球最高分；結算時判斷是否進榜也用它）
       this.hiBase = BM.Storage.best();
       this.wave = 0;
@@ -63,6 +66,8 @@
       this.eBullets.length = 0;
       // 晝夜：確認目前波數對應的時段（通常打敗 BOSS 時已經開始轉場了，這裡是保險）
       BM.Background.setPhase(BM.Background.phaseFor(this.wave), { duration: C.DAYNIGHT.transition, progress: this.phaseProgress(this.wave) });
+      for (const g of this.golds) g.leave();                       // 上一波還沒走的金必鼠直接飛走
+      this.planGold();
       if (this.wave % C.BOSS.EVERY === 0) { this.startBossWave(); return; }   // 每 5 波出現一次 BOSS
 
       this.boss = null;
@@ -78,6 +83,54 @@
       BM.Audio.playMusic(this.musicFor(this.wave));
       BM.Audio.sfx('wave');
       BM.Audio.sfx('squeak');            // 起司月亮抖動、老鼠準備噴出：「吱吱」
+    }
+
+    // ---- 金必鼠（稀有加分鼠）----
+    // 出現機率：第 firstWave 波起，每個一般波 chance（10%）；連續沒安排到，每波再 +3%（上限 30%），安排到就歸零；BOSS 波不出現。
+    // 模擬 10 萬波：平均每 5.3 個一般波出現一次（約 19%）。出現時間是該波開始後 7~16 秒（陣形排好、開始出擊之後）；如果這一波在那之前就被清光，就不會出現。
+    planGold() {
+      const G = C.GOLD;
+      this.goldAt = null;
+      if (this.wave % C.BOSS.EVERY === 0 || this.wave < G.firstWave) return;
+      const p = Math.min(G.chanceMax, G.chance + G.chanceStep * this.goldMiss);
+      if (Math.random() < p) { this.goldAt = M.rand(G.appear[0], G.appear[1]); this.goldMiss = 0; }
+      else this.goldMiss++;
+    }
+
+    spawnGold() {
+      this.goldAt = null;
+      const g = new BM.GoldMouse(this);
+      this.golds.push(g);
+      BM.Audio.sfx('goldIn');
+      BM.Popups.add(M.clamp(g.tx, 90, W - 90), 205, L('gold.appear'), '#ffd166');
+    }
+
+    hitGold(g) {
+      g.hp--; g.hits++;
+      g.flash = 0.1;
+      BM.Audio.sfx('goldHit', g.hits);
+      BM.Particles.sparkle(g.x, g.y, '#ffe27a', 3);
+      if (g.hp <= 0) this.killGold(g);
+    }
+
+    // 擊落金必鼠：高分 + 多一台預備機（預備機已滿就改給額外分數）
+    killGold(g) {
+      const G = C.GOLD;
+      g.dead = true;
+      BM.Particles.explode(g.x, g.y, '#ffd23f', 26);
+      BM.Particles.explode(g.x, g.y, '#e0303a', 12);
+      BM.Particles.explode(g.x, g.y, '#ffffff', 10);
+      BM.Audio.sfx('goldDie');
+      this.addShake(0.25);
+      BM.Popups.add(g.x, g.y - 14, '+' + G.points, '#ffe27a');
+      this.addScore(G.points);
+      if (this.reserve < C.MAX_LIVES) {
+        this.reserve++;
+        BM.Popups.add(g.x, g.y + 12, '1UP', '#8dffb0');
+      } else {
+        BM.Popups.add(g.x, g.y + 12, '+' + G.capBonus, '#8dffb0');
+        this.addScore(G.capBonus);
+      }
     }
 
     // 一般波的背景音樂跟著時段走：白天 = 原本的曲子、黃昏 = 慢板懷舊曲、黑夜 = 星空曲（BOSS 波固定用 BOSS 曲）
@@ -115,6 +168,7 @@
       this.stateT = 2.8;
       this.banner = { text: text || 'WAVE CLEAR!', sub: (sub ? sub + '　' : '') + L('banner.bonus', { n: bonus }), t: 0, dur: 2.6 };
       BM.Audio.sfx('clear');
+      for (const g of this.golds) g.leave();                        // 過關了，金必鼠也飛走
       // 下一波如果是新的時段（每 5 波換一次，也就是打敗 BOSS 之後），現在就開始平滑轉場：白天→黃昏→黑夜→白天…
       BM.Background.setPhase(BM.Background.phaseFor(this.wave + 1), { duration: C.DAYNIGHT.transition, progress: this.phaseProgress(this.wave + 1) });
     }
@@ -221,6 +275,8 @@
 
       for (const e of this.enemies) e.update(dt, this);
       if (this.boss) this.boss.update(dt, this);
+      if (this.goldAt !== null && this.state === 'playing' && this.waveT >= this.goldAt && !this.golds.length) this.spawnGold();
+      for (const g of this.golds) g.update(dt, this);
 
       // 起司月亮：進場前抖動；老鼠還在噴出時發亮。全隊到位後播一次波紋
       this.waveT += dt;
@@ -245,6 +301,7 @@
       for (const b of this.eBullets) b.update(dt);
       this.collide();
       this.enemies = this.enemies.filter(e => !e.dead);
+      this.golds = this.golds.filter(g => !g.dead && !g.gone);
       this.pBullets = this.pBullets.filter(b => !b.dead);
       this.eBullets = this.eBullets.filter(b => !b.dead);
       BM.Particles.update(dt);
@@ -266,6 +323,12 @@
           if (e.dead || !e.hittable) continue;
           const dx = b.x - e.x, dy = b.y - e.y, r = e.radius + b.r;
           if (dx * dx + dy * dy < r * r) { b.dead = true; this.hitEnemy(e, 1); break; }
+        }
+        if (b.dead) continue;
+        for (const g of this.golds) {                                 // 金必鼠：子彈要先穿過陣形，被小兵擋掉的就打不到
+          if (!g.hittable) continue;
+          const dx = b.x - g.x, dy = b.y - g.y, r = g.radius + b.r;
+          if (dx * dx + dy * dy < r * r) { b.dead = true; this.hitGold(g); break; }
         }
       }
 
@@ -367,6 +430,7 @@
       }
 
       for (const e of this.enemies) e.draw(ctx, t);
+      for (const g of this.golds) g.draw(ctx, t);
       if (this.boss) this.boss.draw(ctx, t);
       for (const b of this.pBullets) b.draw(ctx);
       for (const b of this.eBullets) b.draw(ctx);

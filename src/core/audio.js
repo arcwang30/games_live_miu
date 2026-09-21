@@ -147,6 +147,12 @@
     pop()    { tone({ type: 'square', f: 900, f2: 1500, d: 0.04, v: 0.035 }); },
     ripple() { [72, 76, 79, 84, 88].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), d: 0.16, v: 0.1, delay: i * 0.05 })); },
 
+    // ---- 金必鼠 ----
+    goldIn()  { [84, 88, 91, 96].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), d: 0.14, v: 0.08, delay: i * 0.07 })); },     // 出現：閃亮的上行琶音
+    goldHit(n) { const f = 1100 + (n || 0) * 70; tone({ type: 'triangle', f, f2: f * 0.9, d: 0.08, v: 0.09 }); tone({ type: 'sine', f: f * 2, d: 0.1, v: 0.04 }); },   // 打中：金屬「叮」，越打音越高
+    goldDie() { for (let i = 0; i < 9; i++) tone({ type: i % 2 ? 'triangle' : 'sine', f: 1700 + Math.random() * 1500, d: 0.09, v: 0.06, delay: i * 0.045 }); [72, 76, 79, 84, 88].forEach((m, i) => tone({ type: 'square', f: mtof(m), d: 0.14, v: 0.08, delay: 0.1 + i * 0.08 })); },   // 擊落：硬幣嘩啦 + 得意的上行音階
+    goldOut() { [96, 91, 88, 84].forEach((m, i) => tone({ type: 'triangle', f: mtof(m), d: 0.16, v: 0.06, delay: i * 0.09 })); },   // 飛走：下行的「掰掰」
+
     // ---- BOSS ----
     warning()   { for (let i = 0; i < 6; i++) tone({ type: 'sawtooth', f: i % 2 ? 660 : 880, d: 0.26, v: 0.09, delay: i * 0.3 }); },
     poop()      { tone({ type: 'sine', f: 340, f2: 110, d: 0.16, v: 0.1 }); },
@@ -488,7 +494,7 @@
       unlocked = true;
       if (wanted && current !== wanted) startTrack(wanted);
     },
-    sfx(name) { if (unlocked && SFX[name]) SFX[name](); },
+    sfx(name, arg) { if (unlocked && SFX[name]) SFX[name](arg); },
     playMusic(name) {
       wanted = name;
       if (unlocked && current !== name) startTrack(name);

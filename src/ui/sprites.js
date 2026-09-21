@@ -148,6 +148,40 @@
     }
   }
 
+  // ---------- 金必鼠（稀有加分鼠）：金色身體、紅色頭巾與耳朵內側、白色翅膀與嘴套；跟小兵鼠一樣大（朝下）----------
+  function drawGoldMouse(g) {
+    const GO = '#7a4a00', RED = '#e0303a';
+    for (const s of [-1, 1]) {                                     // 翅膀：白色、金色邊
+      g.save(); g.translate(s * 12.5, -1); g.rotate(s * 0.5);
+      ell(g, 0, 0, 4.6, 8.6, '#ffffff', GO, 1.2);
+      ell(g, 0, -3.2, 2.2, 3.2, '#ffe27a');
+      g.restore();
+    }
+    g.beginPath(); g.moveTo(0, -9); g.quadraticCurveTo(6, -14, 3, -17);   // 尾巴：金色，尾端一顆紅寶石
+    g.strokeStyle = '#ffb700'; g.lineWidth = 1.9; g.stroke();
+    ell(g, 3, -17.2, 1.9, 1.9, RED, GO, 0.7);
+    for (const s of [-1, 1]) {                                     // 耳朵：金色、內側紅色
+      ell(g, s * 9, -7, 6, 6, '#ffcf3a', GO, 1.4);
+      ell(g, s * 9, -7, 3.4, 3.4, RED);
+    }
+    const gr = g.createRadialGradient(-3.5, -3, 1.5, 0, 1, 13);    // 頭：金色漸層
+    gr.addColorStop(0, '#fff3a8'); gr.addColorStop(0.55, '#ffd23f'); gr.addColorStop(1, '#f0a800');
+    ell(g, 0, 1, 11.8, 10.8, gr, GO, 1.6);
+    ell(g, 0, 6, 5, 3.6, '#ffffff');                               // 嘴套：白色
+    ell(g, 0, 7.6, 1.8, 1.4, RED);                                 // 鼻子：紅色
+    for (const s of [-1, 1]) {
+      ell(g, s * 7.6, 4.2, 2.3, 1.7, 'rgba(255,60,70,0.55)');     // 腮紅
+      ell(g, s * 4.4, 0.5, 2.3, 2.8, '#231a2b');                   // 眼睛
+      ell(g, s * 4.4 - 0.6, -0.6, 0.9, 0.9, '#fff');
+      line(g, s * 6, 6, s * 13.5, 4.6, 'rgba(122,74,0,0.75)', 0.9); // 鬍鬚
+      line(g, s * 6, 7.4, s * 13.5, 8.4, 'rgba(122,74,0,0.75)', 0.9);
+    }
+    line(g, -11, -4.8, 11, -4.8, RED, 3.8);                        // 紅色頭巾，中間一枚金幣
+    for (const s of [-1, 1]) for (const k of [1, 2]) ell(g, s * (k * 3.4 + 4.2), -4.8, 0.7, 0.7, '#ffffff');
+    ell(g, 0, -4.8, 3.6, 3.6, '#ffd23f', GO, 1);
+    ell(g, 0, -4.8, 1.7, 1.7, null, GO, 0.8);
+  }
+
   // ---------- 子彈 ----------
   function drawFish(g, evil) {           // 小魚（朝上）。evil=true 是被 BOSS 反彈的紅色版本
     const glow = evil ? '255,90,90' : '140,240,255';
@@ -325,6 +359,8 @@
         make('mouse' + t, 36, 40, g => drawMouse(g, t));
         makeFlash('mouse' + t);
       }
+      make('mouseGold', 36, 40, drawGoldMouse);                 // 金必鼠
+      makeFlash('mouseGold');
       make('fish', 30, 40, g => drawFish(g, false));
       make('fishR', 30, 40, g => drawFish(g, true));
       make('orb', 22, 22, drawOrb);
