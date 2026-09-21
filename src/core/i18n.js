@@ -43,6 +43,34 @@
       'about.0': '關於射擊遊戲', 'about.1': '概念結構', 'about.2': '關於Arc遊戲庫', 'about.soon': '（內容準備中）',
       // 要補「關於」三個分頁的內文：在這裡加上 'about.body.0'（關於射擊遊戲）、'about.body.1'（概念結構）、'about.body.2'（關於Arc遊戲庫），
       // 用 \n 換行；日文 / 英文在各自的字典加同名 key（沒有時會顯示中文）。沒有內文的分頁顯示「準備中」。
+      // 「關於射擊遊戲」內文（作者提供，縱向射擊遊戲的歷史）。樣式標記同下方「概念結構」
+      'about.body.0':
+        '縱向射擊遊戲（Vertical Scrolling Shooter，常簡稱為縱捲軸射擊或簡稱 STG）是電子遊戲史上最古老且最輝煌的類型之一。這種類型通常採用由上而下（Top-Down）的鳥瞰視角，玩家操縱位於畫面下方的戰機，迎擊從上方如潮水般湧現的敵軍。從早期一兩個像素組成的子彈，到後來滿螢幕華麗的彈幕，縱向射擊遊戲經歷了數個技術與玩法上的關鍵變革階段：\n' +
+        '# 1. 奠基期（1970年代末）：固定畫面與移動的先驅\n' +
+        '在「捲軸（Scrolling）」技術尚未成熟前，早期的射擊遊戲多為固定畫面（Single-screen）。\n' +
+        '• 《太空侵略者》（Space Invaders, 1978）： 雖然不是捲軸遊戲，但它確立了「橫向移動、向上射擊」的黃金公式，為縱向射擊遊戲打下了核心玩法的地基。\n' +
+        '• 《小蜜蜂》（Galaxian, 1979）： 首度引進彩色畫面與敵機弧形軌道俯衝攻擊，使畫面生動許多。\n' +
+        '# 2. 捲軸革命與黃金期（1980年代）：真正的「縱向捲軸」誕生\n' +
+        '1980年代初期，背景能不斷向後滾動的捲軸技術被發明，這讓玩家產生了「戰機正向前翱翔」的空間延伸感。\n' +
+        '• 《鐵板陣》（Xevious, 1983）： 由 南夢宮 (Namco) 推出，這款作品被公認為縱向捲軸射擊遊戲的始祖與里程碑。它開創性地將武器分為對空的雷射與對地的炸彈（需要對準地面準星），並首次加入完整的世界觀與隱藏要素，奠定了傳統 STG 的標準架構。\n' +
+        '• 《1942》（1984）： 卡普空 (Capcom) 以二戰為背景的名作，引入了「迴旋（Loop）」的緊急閃避機制，並開創了二戰軍事風 STG 的熱潮。\n' +
+        '• 《大旋風》、《究極虎》（Twin Cobra, 1987）： 由東亞企劃（Toaplan）開發，確立了「強化火力（P子彈）＋全螢幕保命炸彈（Bomb）」的 STG 經典公式。\n' +
+        '• 《兵蜂》（TwinBee, 1985）： 科樂美 (Konami) 推出的作品，打破了當時一味的科幻與軍事嚴肅風格，以粉嫩可愛的色調與「射擊鈴鐺改變顏色以獲得不同特殊能力」的逗趣系統著稱。\n' +
+        '# 3. 高峰與極致（1990年代）：音速戰機與「彈幕」的誕生\n' +
+        '進入90年代後，雖然大型電玩（街機）市場逐漸被 2D 格鬥遊戲（如《快打旋風》）佔據，但縱向射擊遊戲在技術與美術上達到了頂峰，並分化出極限流派。\n' +
+        '• 《四國戰機 / 音速戰機》（Sonic Wings, 1992）： 引進多國戰機與各具特色的駕駛員（包括一隻貓），節奏明快，成為街機房的常客。\n' +
+        '• 《雷電》（Raiden, 1990）： 由 Seibu Kaihatsu 開發，以極具重量感的戰機設計、流暢的擦彈與極高難度聞名，成為縱向射擊代名詞之一。\n' +
+        '• 《閃電風暴》（RayForce, 1994）： TAITO 製作的經典作品，主打雙層視角概念，戰機可以鎖定「位於下方背景層」的敵人發射追蹤雷射，美術與音樂表現皆達神級水準。\n' +
+        '• 彈幕射擊遊戲（Bullet Hell / Danmaku）的興起：\n' +
+        '◦ 1995年，由東亞企劃班底重組的 CAVE 公司 推出了《首領蜂》（DonPachi），隨後在 1997年 推出 《怒首領蜂》。\n' +
+        '◦ 這正式宣告了「彈幕（Bullet Hell）」時代的來臨。這類遊戲將敵機子彈壓縮得極密、極多、極其華麗，但將玩家戰機的被判定受擊點（Hitbox）縮小到只有一兩個像素，玩法從早期的「背敵機位置」轉變為極度考驗動態視力與微操的「在彈幕縫隙中求生」。\n' +
+        '# 4. 小眾與精神延續（2000年代至今）：東方 Project 與獨立遊戲\n' +
+        '隨著 3D 遊戲全面普及，2D 縱向射擊遊戲在商業主流市場逐漸式微，轉變為核心玩家群體的硬派狂歡，並在同人與獨立遊戲界開出奇花。\n' +
+        '• 《斑鳩》（Ikaruga, 2001）： 由 Treasure 開發，引入了震驚業界的「黑與白」同色免疫、異色雙倍傷害屬性轉換系統，將射擊遊戲提升到了如同解謎一般的策略高度。\n' +
+        '• 《東方 Project》系列（1996年至今）： 由神主 ZUN 一人核心開發的同人彈幕遊戲系列（如《東方紅魔鄉》、《東方妖妖夢》）。它憑藉著優秀的彈幕設計、世界觀和無數迷人的美少女角色，引爆了龐大的二創熱潮，成功讓彈幕射擊文化在網路世代得以發揚光大。\n' +
+        '• 現代移動端與獨立遊戲： 近年來，許多縱向射擊遊戲轉戰智慧型手機（如《傲氣雄鷹 Sky Force》系列、各式微課金雷霆戰機類手遊），利用單指滑動便能輕鬆遊玩；或是像《J数を再定義する》之類的獨立作品，繼續傳承著傳統 STG 的硬派精神。\n' +
+        '# 總結\n' +
+        '縱向射擊遊戲的歷史是一段「從大眾娛樂走向極致硬派」的演變史。它雖然不再身處遊戲產業的舞台中央，但它留下的捲軸技術、判定概念與極限流暢的硬體優化經驗，早已深深烙印在現代電子遊戲的基因之中。',
       // 「概念結構」內文（作者提供）。開頭的 # • ◦ > 是樣式標記（標題 / 項目 / 次項目 / 次項目接續），說明見 menu-scene.js 的 aboutLayout
       'about.body.1':
         '縱向飛機射擊遊戲（Vertical Scrolling Shooter，簡稱 STG），核心開發流程可以拆解為以下幾個關鍵模組：\n' +
@@ -164,6 +192,34 @@
       'lang.hint': '選ぶとすぐに切り替わります',
       'credit.planning': '企画', 'credit.programming': 'プログラム', 'credit.art': 'アート', 'credit.music': '音楽', 'credit.thanks': 'スペシャルサンクス',
       'about.0': '射撃ゲームについて', 'about.1': 'コンセプト構成', 'about.2': 'Arcゲームライブラリ', 'about.soon': '（準備中）',
+      // 「射撃ゲームについて」内文（日文）。スタイル記号は下の「コンセプト構成」と同じ
+      'about.body.0':
+        '縦スクロールシューティングゲーム（Vertical Scrolling Shooter、一般に縦シューやSTGと略される）は、ビデオゲームの歴史において最も古く、かつ最も輝かしいジャンルの一つです。このジャンルは通常、上から見下ろすトップダウン（俯瞰）視点を採用しており、プレイヤーは画面下部にある自機を操作し、上方から怒涛の如く押し寄せる敵軍を迎え撃ちます。初期の1〜2ピクセルで構成された弾から、のちに画面を埋め尽くす華麗な弾幕に至るまで、縦スクロールシューティングは技術とゲームプレイの両面でいくつかの重要な変革期を経てきました。\n' +
+        '# 1. 黎明期（1970年代末）：固定画面と移動の先駆者\n' +
+        '「スクロール」技術がまだ成熟していなかった初期のシューティングゲームは、その多くが固定画面（Single-screen）でした。\n' +
+        '• 『スペースインベーダー』（Space Invaders, 1978）： スクロールゲームではありませんが、「左右に移動し、上に向かって撃つ」という黄金律を確立し、縦スクロールシューティングのコアなゲームプレイの基礎を築きました。\n' +
+        '• 『ギャラクシアン』（Galaxian, 1979）： 初めてカラー画面を導入し、敵機が弧を描いてインベーダーのように一斉にではなく、個別にダイブ攻撃を仕掛けてくるなど、画面をより躍動的にしました。\n' +
+        '# 2. スクロール革命と黄金期（1980年代）：真の「縦スクロール」誕生\n' +
+        '1980年代初頭、背景が絶え間なく後方へと流れるスクロール技術が発明され、これによりプレイヤーに「自機が前方に突き進んでいる」という空間的な広がりを感じさせることができるようになりました。\n' +
+        '• 『ゼビウス』（Xevious, 1983）： ナムコ（Namco）がリリースしたこの作品は、縦スクロールシューティングゲームの始祖であり、大いなるマイルストーンとして広く認められています。武器を対空レーザーと対地爆弾（地上照準を合わせる必要がある）に分けるという画期的なシステムを導入し、初めて本格的な世界観や隠し要素を盛り込み、伝統的なSTGの標準的な骨組みを確立しました。\n' +
+        '• 『1942』（1984）： カプコン（Capcom）による第二次世界大戦を舞台にした名作。緊急回避メカニズムである「宙返り（Loop）」を導入し、第二次世界大戦風ミリタリーSTGのブームを巻き起こしました。\n' +
+        '• 『究極タイガー』（Twin Cobra, 1987）： 東亜プラン（Toaplan）が開発し、「ショットパワーアップ（Pアイテム）＋画面全体攻撃の緊急回避ボンバー（Bomb）」という、STGのクラシックな公式を決定づけました。\n' +
+        '• 『ツインビー』（TwinBee, 1985）： コナミ（Konami）がリリースした作品。当時のSFやミリタリーといったシリアスな路線を打ち破り、パステルカラーの可愛らしい色調と、「ベルを撃って色を変えることで異なる特殊能力を獲得する」というコミカルなシステムで人気を博しました。\n' +
+        '# 3. ピークと極致（1990年代）：音速の戦いと「弾幕」の誕生\n' +
+        '1990年代に入ると、アーケード（ゲームセンター）市場は次第に2D格闘ゲーム（『ストリートファイター』など）に占拠されていきましたが、縦スクロールシューティングは技術とグラフィックの面で頂点に達し、さらに極限の派生ジャンルを生み出しました。\n' +
+        '• 『ソニックウィングス』（Sonic Wings, 1992）： 多国籍の戦闘機と、それぞれ個性豊かなパイロット（猫を含む）を導入。テンポが良く、ゲームセンターの定番タイトルとなりました。\n' +
+        '• 『雷電』（Raiden, 1990）： セイブ開発（Seibu Kaihatsu）が開発。非常に重量感のある機体デザイン、滑らかなドット絵、そして非常に高い難易度で知られ、縦スクロールシューティングの代名詞の一つとなりました。\n' +
+        '• 『レイフォース』（RayForce, 1994）： タイトー（TAITO）が制作した傑作。2層の視点概念を主軸に据え、自機は「下層の背景レイヤーにいる」敵をロックオンして誘導レーザーを発射することができ、グラフィックと音楽の表現は神がかったクオリティに達していました。\n' +
+        '• 弾幕シューティングゲーム（Bullet Hell / Danmaku）の台頭：\n' +
+        '◦ 1995年、東亜プランの元スタッフが再集結して設立されたCAVE（ケイブ）が『首領蜂』（DonPachi）をリリース、続く1997年に『怒首領蜂』をリリースしました。\n' +
+        '◦ これにより、正式に「弾幕」時代の到来が告げられました。このタイプのゲームは、敵の弾を極限まで高密度、大量、そして華麗に詰め込む一方、プレイヤー側の自機の当たり判定（Hitbox）をわずか1〜2ピクセルにまで縮小させました。ゲームプレイは、初期の「敵の出現位置を覚える」ものから、動体視力と繊細なレバー捌き（精密操作）が極限まで試される「弾幕の隙間を縫って生き残る」ものへと変貌を遂げました。\n' +
+        '# 4. ニッチ化と精神の継承（2000年代〜現在）：東方Projectとインディーゲーム\n' +
+        '3Dゲームが全面的に普及するにつれ、2D縦スクロールシューティングは商業的なメインストリーム市場からは次第に姿を消し、コアなプレイヤー層のためのハードコアな狂宴へと変化していきました。しかし、同人やインディーゲームの領域で独自の進化を遂げることになります。\n' +
+        '• 『斑鳩』（Ikaruga, 2001）： トレジャー（Treasure）が開発。業界に衝撃を与えた「白と黒」の属性変更システム（同色の弾は吸収・無効化し、異色の敵には2倍のダメージを与える）を導入し、シューティングゲームをまるでパズルを解くかのような戦略的な高さへと引き上げました。\n' +
+        '• 『東方Project』シリーズ（1996年〜現在）： 主宰のZUN氏がほぼ一人で開発している同人弾幕ゲームシリーズ（『東方紅魔郷』『東方妖々夢』など）。優れた弾幕デザイン、魅力的な世界観、そして数多くの魅力的な美少女キャラクターによって爆発的な二次創作ブームを巻き起こし、弾幕シューティング文化をインターネット世代に広く浸透させることに成功しました。\n' +
+        '• 現代のモバイル展開とインディーゲーム： 近年、多くの縦スクロールシューティングゲームがスマートフォンへと舞台を移し（『Sky Force』シリーズや、各種課金型のシューティングアプリなど）、指一本のフリックで手軽に遊べるようになっています。あるいは、伝統的なSTGの硬派な精神を受け継ぐような、様々なインディー作品が開発され続けています。\n' +
+        '# まとめ\n' +
+        '縦スクロールシューティングゲームの歴史は、「大衆娯楽から極限のハードコアへ」と至る変遷の歴史です。もはやゲーム産業のステージ中央に身を置くことはなくなりましたが、このジャンルが遺したスクロール技術、当たり判定の概念、そして極限までスムーズなハードウェアの最適化ノウハウは、現代のビデオゲームの遺伝子の中に今も深く刻み込まれています。',
       // 「コンセプト構成」内文（日文）。行頭の # • ◦ > はスタイル記号（見出し / 項目 / 副項目 / 副項目の続き）
       'about.body.1':
         '縦スクロールシューティングゲーム（Vertical Scrolling Shooter、略称：STG）のコア開発フローは、主に以下のキーモジュールに分解することができます。\n' +
@@ -282,6 +338,34 @@
       'lang.hint': 'Applied immediately',
       'credit.planning': 'Planning', 'credit.programming': 'Programming', 'credit.art': 'Art', 'credit.music': 'Music', 'credit.thanks': 'Special Thanks',
       'about.0': 'About Shooting Games', 'about.1': 'Concept Structure', 'about.2': 'About Arc Games', 'about.soon': '(Coming soon)',
+      // "About Shooting Games" body text (English). Same style markers as "Concept Structure" below. Plain apostrophes only (see the note further down)
+      'about.body.0':
+        'Vertical Scrolling Shooters (often shortened to vertical shmups or simply STGs) are one of the oldest and most glorious genres in video game history. Typically featuring a top-down, bird\'s-eye perspective, players control a ship at the bottom of the screen to fend off waves of enemies flooding in from above. From the early days of bullets made of just one or two pixels to the screen-filling, dazzling bullet hells of later years, the vertical shooter has undergone several pivotal eras of evolution in both technology and gameplay:\n' +
+        '# 1. The Foundation Era (Late 1970s): Single-Screen and Movement Pioneers\n' +
+        'Before scrolling technology matured, early shooting games were mostly confined to a single, fixed screen.\n' +
+        '• Space Invaders (1978): While not a scrolling game, it established the golden formula of "horizontal movement and upward shooting," laying the core gameplay foundation for all future vertical shooters.\n' +
+        '• Galaxian (1979): This title introduced color graphics and enemies that dove at the player in sweeping, curved paths, bringing a newfound dynamism to the screen.\n' +
+        '# 2. The Scrolling Revolution & Golden Age (1980s): The Birth of the True "Vertical Scroll"\n' +
+        'In the early 1980s, the invention of scrolling technology—where the background constantly rolled downward—gave players a powerful sense of spatial expansion, making them feel as if their ship was genuinely soaring forward.\n' +
+        '• Xevious (1983): Released by Namco, this masterpiece is widely recognized as the pioneer and milestone of vertical scrolling shooters. It innovatively split weapons into anti-air lasers and air-to-ground bombs (which required aligning a ground reticle). It was also the first to feature a fully realized world-building lore and hidden secrets, setting the definitive framework for traditional STGs.\n' +
+        '• 1942 (1984): Capcom\'s World War II-themed classic introduced the "loop" emergency evasion mechanic and ignited a massive wave of military-styled WW2 shooters.\n' +
+        '• Twin Cobra (1987): Developed by Toaplan, this game solidified the classic STG formula: "weapon power-ups (P items) + screen-clearing panic bombs."\n' +
+        '• TwinBee (1985): Released by Konami, this game broke away from the serious sci-fi and military themes of the era. It became famous for its pastel, cute aesthetic and a playful system where players shot floating bells to change their colors and gain different special abilities.\n' +
+        '# 3. The Peak & The Extreme (1990s): High-Speed Fighting and the Birth of "Bullet Hell"\n' +
+        'As the 1990s rolled in, the arcade market was gradually taken over by 2D fighting games like Street Fighter. However, vertical shooters reached their technical and artistic zenith during this time, branching out into extreme subgenres.\n' +
+        '• Sonic Wings / Aero Fighters (1992): This game introduced aircraft from multiple nations alongside a quirky cast of pilots (including a cat). Its brisk pace made it an absolute staple in arcades.\n' +
+        '• Raiden (1990): Developed by Seibu Kaihatsu, it became synonymous with vertical shooters thanks to its heavy, mechanical ship designs, smooth sprite animation, and notoriously punishing difficulty.\n' +
+        '• RayForce (1994): A classic produced by Taito, it centered on a dual-layer perspective concept. Players could lock onto enemies located on the lower background layer and fire homing lasers. Its art direction and musical score achieved legendary, god-tier status.\n' +
+        '• The Rise of Bullet Hell (Danmaku) Games:\n' +
+        '◦ In 1995, CAVE—a company formed by former Toaplan staff—released DonPachi, followed by DoDonpachi in 1997.\n' +
+        '◦ This officially heralded the arrival of the "Bullet Hell" era. These games compressed enemy fire into incredibly dense, massive, and stunningly intricate patterns. To compensate, they shrank the player ship\'s hitbox down to just one or two pixels. Gameplay shifted from the early days of memorizing enemy spawns to an extreme test of dynamic vision and pixel-perfect micro-dodging to survive in the gaps between bullets.\n' +
+        '# 4. Niche Appeal & Spiritual Succession (2000s–Present): Touhou Project and Indie Games\n' +
+        'With the mainstream adoption of 3D gaming, 2D vertical shooters gradually receded from commercial mass markets, transforming into a hardcore celebration for dedicated enthusiasts and blooming beautifully in the doujin and indie scenes.\n' +
+        '• Ikaruga (2001): Developed by Treasure, it shocked the industry with its "Black and White" polarity-shifting system. Absorbing bullets of the same color while dealing double damage to opposite-colored enemies elevated the shooter genre to a strategic, puzzle-like depth.\n' +
+        '• Touhou Project Series (1996–Present): A doujin bullet hell series developed almost entirely by a single creator, ZUN (e.g., The Embodiment of Scarlet Devil, Perfect Cherry Blossom). Driven by excellent bullet patterns, deep lore, and a cast of charming anime heroines, it sparked a massive wave of fan-made derivative content, successfully preserving and popularizing bullet hell culture for the internet generation.\n' +
+        '• Modern Mobile & Indie Games: In recent years, many vertical shooters have migrated to smartphones (such as the Sky Force series and various free-to-play, microtransaction-based mobile shmups), allowing casual play with single-finger swiping. Meanwhile, distinct indie titles continue to pass down the unyielding, hardcore spirit of traditional STGs.\n' +
+        '# Conclusion\n' +
+        'The history of vertical scrolling shooters is an evolution of "moving from mass entertainment to the absolute extreme of hardcore gaming." Though it no longer stands at the center stage of the gaming industry, its legacy—scrolling mechanics, the concept of precise hitboxes, and hyper-optimized hardware performance—has been deeply woven into the DNA of modern video games.',
       // "Concept Structure" body text (English). Leading # • ◦ > are style markers (heading / bullet / sub-bullet / sub-bullet continuation), see aboutLayout in menu-scene.js
       'about.body.1':
         'Vertical Scrolling Shooter (commonly abbreviated as STG), the core development workflow can be broken down into the following key modules:\n' +
