@@ -320,9 +320,9 @@
         D.text(ctx, L(rows[i][0]), 94, y, { size: 22, color: '#ffd166', weight: '900', maxW: 130 });
         D.text(ctx, rows[i][1], 250, y, { size: 24, color: '#fff', weight: '900', family: D.NUM, maxW: 200 });
       }
-      D.text(ctx, L('credit.thanks'), W / 2, 580, { size: 26, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 380 });
-      const names = ['Kelvin Lo', 'Gomoto', 'Bubu Lin', '國見比呂', 'KT Lee'];
-      for (let i = 0; i < names.length; i++) D.text(ctx, names[i], W / 2, 634 + i * 36, { size: 23, align: 'center', color: '#fff', weight: '700', maxW: 300 });
+      D.text(ctx, L('credit.thanks'), W / 2, 556, { size: 26, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 380 });
+      const names = ['Kelvin Lo', 'Gomoto', 'Bubu Lin', '國見比呂', 'KT Lee', '大王KUNI'];
+      for (let i = 0; i < names.length; i++) D.text(ctx, names[i], W / 2, 610 + i * 33, { size: 23, align: 'center', color: '#fff', weight: '700', maxW: 300 });
     }
 
     drawLanguage(ctx, t) {
