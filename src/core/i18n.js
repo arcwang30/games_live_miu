@@ -43,7 +43,41 @@
       'about.0': '關於射擊遊戲', 'about.1': '概念結構', 'about.2': '關於Arc遊戲庫', 'about.soon': '（內容準備中）',
       // 要補「關於」三個分頁的內文：在這裡加上 'about.body.0'（關於射擊遊戲）、'about.body.1'（概念結構）、'about.body.2'（關於Arc遊戲庫），
       // 用 \n 換行；日文 / 英文在各自的字典加同名 key（沒有時會顯示中文）。沒有內文的分頁顯示「準備中」。
-      // 「關於Arc遊戲庫」內文（作者提供）。日文 / 英文還沒有翻譯，會先顯示中文
+      // 「概念結構」內文（作者提供）。開頭的 # • ◦ > 是樣式標記（標題 / 項目 / 次項目 / 次項目接續），說明見 menu-scene.js 的 aboutLayout
+      'about.body.1':
+        '縱向飛機射擊遊戲（Vertical Scrolling Shooter，簡稱 STG），核心開發流程可以拆解為以下幾個關鍵模組：\n' +
+        '# 1. 遊戲視角與場景初始化\n' +
+        '• 相機設定： 將相機調整為正交投影（Orthographic），視角由上往下看（Top-down）。\n' +
+        '• 背景滾動（捲軸）： 縱向射擊遊戲的「前進感」通常是透過背景移動來營造的。\n' +
+        '◦ 實作方法： 讓一張無限循環的星空或地面貼圖，透過程式碼不斷改變其 UV 偏移量（Offset），或者讓兩張背景圖交替拼接、往下移動並循環重置坐標。\n' +
+        '# 2. 玩家戰機控制 (Player)\n' +
+        '• 移動邏輯： 監聽鍵盤（WASD / 方向鍵）、滑鼠或手機觸控。\n' +
+        '◦ 關鍵細節： 必須使用 Mathf.Clamp 限制戰機的坐標，防止玩家飛出螢幕邊界。\n' +
+        '• 自動射擊 / 手動射擊：\n' +
+        '◦ 設定一個射擊間隔時間（CD）。當玩家按下按鍵或畫面按壓時，透過 Instantiate（生成）子彈物件，並給予子彈一個向上的速度。\n' +
+        '# 3. 子彈與彈幕系統 (Bullets & Danmaku)\n' +
+        '• 子彈移動： 子彈生成後，朝特定方向直行或沿著特定軌跡（如追蹤、散射）移動。\n' +
+        '• 物件池（Object Pooling）技術： 這是射擊遊戲最重要的優化！ 畫面上會同時出現成百上千顆子彈，如果頻繁地建立（Create）與銷毀（Destroy）物件，會導致遊戲嚴重卡頓（GC 凍結）。\n' +
+        '◦ 實作方法： 事先建立一個子彈池，子彈射出時「啟用（Active）」，飛出螢幕或打中敵人時「隱藏（Deactive）」，重複循環使用。\n' +
+        '• 邊界回收： 在螢幕上方與下方設定一個隱形的邊界觸發器（Boundary Trigger），任何子彈或敵人越過此邊界，立刻回收或銷毀，避免消耗效能。\n' +
+        '# 4. 敵人與生成器 (Enemies & Spawner)\n' +
+        '• 敵人行為： 建立不同類型的敵人路徑（如：直直往下飛、S型走位、在空中停留一陣子後離去）。\n' +
+        '• 生成控制器（Spawn Manager）：\n' +
+        '◦ 定時生成： 使用協程（Coroutine）或計時器，每隔幾秒在螢幕上方隨機坐標生成敵人。\n' +
+        '◦ 關卡劇本： 進階做法是寫一個 XML/JSON 配置表或時間軸，規定在遊戲開始第 10 秒出現小兵 A、第 30 秒出現精英怪 B、第 60 秒出現 Boss。\n' +
+        '# 5. 碰撞檢測與生命值 (Collision & HP)\n' +
+        '• 碰撞分組（Layer Matrix）： 明確區分碰撞層，避免「敵人的子彈打到敵人」或「玩家的子彈打到自己」。\n' +
+        '◦ 玩家子彈 只能與 敵人/敵人子彈 發生碰撞。\n' +
+        '◦ 敵人子彈 只能與 玩家 發生碰撞。\n' +
+        '• 受傷觸發： 當觸發碰撞（Trigger Enter）時：\n' +
+        '> 1. 扣除目標的 HP。\n' +
+        '> 2. 生成爆炸特效（VFX）與音效（SFX）。\n' +
+        '> 3. 如果 HP <= 0，觸發毀滅邏輯（玩家扣命或遊戲結束、敵人給予積分）。\n' +
+        '# 6. 遊戲主循環與 UI 系統 (Game Loop & UI)\n' +
+        '• 分數與核心數據： 建立一個 GameManager 來記錄當前分數、玩家剩餘生命（Lives）。\n' +
+        '• UI 介面： 製作抬頭顯示器（HUD），展示血條、炸彈數量、當前得分。\n' +
+        '• 狀態切換： 處理「主選單 → 遊戲中 → 暫停 → 玩家死亡 → Game Over / 重新開始」的邏輯切換。',
+      // 「關於Arc遊戲庫」內文（作者提供）
       'about.body.2':
         '「ARCの概遊庫」這個名字，發想起源於諧音「蓋油庫」(即:概念遊戲保藏庫)。期望自己，以及所有開發者所開發的作品，都能夠像「蓋油庫」一樣，賺大錢！\n' +
         '同時也可以很自豪、很酷地說出自己開發遊戲的喜悅，以及一路走來的心路歷程。除了可以從遊戲中遊玩雛型範本之外，同時可透過內建的歷史功能，了解各系列類型遊戲的組成與開發構成等相關知識，進而對遊戲開發產生興趣。\n' +
@@ -130,6 +164,40 @@
       'lang.hint': '選ぶとすぐに切り替わります',
       'credit.planning': '企画', 'credit.programming': 'プログラム', 'credit.art': 'アート', 'credit.music': '音楽', 'credit.thanks': 'スペシャルサンクス',
       'about.0': '射撃ゲームについて', 'about.1': 'コンセプト構成', 'about.2': 'Arcゲームライブラリ', 'about.soon': '（準備中）',
+      // 「コンセプト構成」内文（日文）。行頭の # • ◦ > はスタイル記号（見出し / 項目 / 副項目 / 副項目の続き）
+      'about.body.1':
+        '縦スクロールシューティングゲーム（Vertical Scrolling Shooter、略称：STG）のコア開発フローは、主に以下のキーモジュールに分解することができます。\n' +
+        '# 1. ゲーム視点とシーンの初期化 (Camera & Background)\n' +
+        '• カメラ設定： カメラの投影モードを正投影（Orthographic）に設定し、視点を上から下へ見下ろすトップダウン（Top-down）にします。\n' +
+        '• 背景のスクロール（スクロール）： 縦スクロールシューティングにおける「前進感」は、通常、背景を移動させることで表現します。\n' +
+        '◦ 実装方法： 無限ループする星空や地面のテクスチャを用意し、コードからUVオフセット（Offset）を常に変化させるか、2枚の背景画像を交互につなぎ合わせ、下方向へ移動させて座標をループリセットします。\n' +
+        '# 2. プレイヤー機体の制御 (Player)\n' +
+        '• 移動ロジック： キーボード（WASD / 方向キー）、マウス、またはスマホのタッチ操作を監視（リスン）します。\n' +
+        '◦ 重要なディテール： 機体が画面外に飛び出さないよう、Mathf.Clamp などを使って機体の座標を制限する必要があります。\n' +
+        '• オート射撃 / マニュアル射撃：\n' +
+        '◦ 射撃のインターバル時間（クールダウン：CD）を設定します。プレイヤーがボタンを押す、または画面をタップしている間、Instantiate（生成）によって弾オブジェクトを生成し、弾に上方向の速度を与えます。\n' +
+        '# 3. 弾と弾幕システム (Bullets & Danmaku)\n' +
+        '• 弾の移動： 弾は生成された後、特定の方向へ直進するか、特定の軌道（追跡、拡散など）に沿って移動します。\n' +
+        '• オブジェクトプール（Object Pooling）技術： これはシューティングゲームにおいて最も重要な最適化です！ 画面上には同時に何百、何千もの弾が表示されます。オブジェクトの生成（Create）と破棄（Destroy）を頻繁に繰り返すと、深刻なラグ（GCフリーズ）の原因になります。\n' +
+        '◦ 実装方法： あらかじめ弾のプールを作成しておき、弾を発射するときに「有効化（Active）」し、画面外に出るか敵に当たったときに「非有効化（Deactive）」して、繰り返し再利用します。\n' +
+        '• 境界での回収： 画面の上下に透明な境界トリガー（Boundary Trigger）を設定し、弾や敵がこの境界を越えたらすぐに回収または破棄することで、パフォーマンスの浪費を防ぎます。\n' +
+        '# 4. 敵とスポナー (Enemies & Spawner)\n' +
+        '• 敵の挙動： さまざまなタイプの敵の移動ルートを作成します（例：まっすぐ下降する、S字に動く、空中でしばらく停止してから去るなど）。\n' +
+        '• 生成コントローラー（Spawn Manager）：\n' +
+        '◦ 定期生成： コルーチン（Coroutine）やタイマーを使用し、数秒ごとに画面上部のランダムな座標に敵を生成します。\n' +
+        '◦ ステージスクリプト（タイムライン）： 応用的なアプローチとして、XML/JSONの構成表やタイムラインを作成し、「ゲーム開始10秒後にザコ敵Aが登場」「30秒後にエリート敵Bが登場」「60秒後にボスが登場」といったルールを設定します。\n' +
+        '# 5. 当たり判定と体力 (Collision & HP)\n' +
+        '• 衝突レイヤー設定（Layer Matrix）： 「敵の弾が敵に当たる」「プレイヤーの弾が自分に当たる」といった誤判定を防ぐため、衝突レイヤーを明確に区別します。\n' +
+        '◦ プレイヤーの弾は、敵 / 敵の弾 とのみ衝突する。\n' +
+        '◦ 敵の弾は、プレイヤー とのみ衝突する。\n' +
+        '• 被弾トリガー： 衝突（Trigger Enter）を検知した際、以下の処理を行います。\n' +
+        '> 1. 対象のHPを減算する。\n' +
+        '> 2. 爆発エフェクト（VFX）と効果音（SFX）を生成する。\n' +
+        '> 3. HPが0以下になった場合、撃破ロジック（プレイヤーなら残機減少またはゲームオーバー、敵ならスコア加算）を実行する。\n' +
+        '# 6. ゲームのメインループとUIシステム (Game Loop & UI)\n' +
+        '• スコアとコアデータ： GameManager を作成し、現在のスコアやプレイヤーの残機（Lives）を管理・記録します。\n' +
+        '• UI表示： HUD（ヘッドアップディスプレイ）を作成し、HPバー、ボムの残り数、現在のスコアなどを表示します。\n' +
+        '• 状態の遷移（ステート管理）： 「メインメニュー → ゲーム中 → 一時停止 → プレイヤー死亡 → ゲームオーバー / リトライ」というロジックの切り替えを処理します。',
       // 「Arcゲームライブラリ」内文（日文）
       'about.body.2':
         '「ARCの概遊庫（がいゆうこ）」という名前は、台湾華語の「蓋油庫（ガイヨウクー：油槽所を建てる）」という言葉の語呂合わせから生まれました（その真の意味は「概念ゲームの保藏庫」です）。自分自身、そしてすべての開発者が生み出す作品が、この「蓋油庫」の言葉通り、大儲けできる（油田を掘り当てる）ような存在になってほしいという願いが込められています。\n' +
@@ -214,6 +282,40 @@
       'lang.hint': 'Applied immediately',
       'credit.planning': 'Planning', 'credit.programming': 'Programming', 'credit.art': 'Art', 'credit.music': 'Music', 'credit.thanks': 'Special Thanks',
       'about.0': 'About Shooting Games', 'about.1': 'Concept Structure', 'about.2': 'About Arc Games', 'about.soon': '(Coming soon)',
+      // "Concept Structure" body text (English). Leading # • ◦ > are style markers (heading / bullet / sub-bullet / sub-bullet continuation), see aboutLayout in menu-scene.js
+      'about.body.1':
+        'Vertical Scrolling Shooter (commonly abbreviated as STG), the core development workflow can be broken down into the following key modules:\n' +
+        '# 1. Game View and Scene Initialization\n' +
+        '• Camera Setup: Adjust the camera projection to Orthographic and set the view to Top-down (looking straight down from above).\n' +
+        '• Background Scrolling: The sensation of "moving forward" in a vertical shooter is typically created by moving the background.\n' +
+        '◦ Implementation: Use a seamlessly looping texture of a starry sky or terrain and constantly update its UV Offset via code. Alternatively, tile two background images together, move them downward, and reset their coordinates in a continuous cycle.\n' +
+        '# 2. Player Control\n' +
+        '• Movement Logic: Listen for inputs from the keyboard (WASD / Arrow Keys), mouse, or mobile touch controls.\n' +
+        '◦ Critical Detail: You must use Mathf.Clamp to restrict the starfighter\'s coordinates, preventing the player from flying off the screen boundaries.\n' +
+        '• Auto-fire / Manual Fire:\n' +
+        '◦ Set a firing interval (Cooldown / CD). When the player presses the designated key or touches the screen, use Instantiate to spawn bullet objects and apply an upward velocity to them.\n' +
+        '# 3. Bullets & Danmaku System\n' +
+        '• Bullet Movement: Once spawned, bullets move forward in a specific direction or follow designated trajectories (e.g., homing, spread shots).\n' +
+        '• Object Pooling Technique: This is the most crucial optimization in shooting games! Hundreds or thousands of bullets can appear on screen simultaneously. Frequently creating and destroying these objects will cause severe game stuttering (GC spikes/freezes).\n' +
+        '◦ Implementation: Instantiate a bullet pool in advance. When a bullet is fired, "set it to active". When it flies off-screen or hits an enemy, "deactivate it" so it can be recycled and reused.\n' +
+        '• Boundary Recycling: Place an invisible Boundary Trigger at the top and bottom of the screen. Any bullet or enemy crossing this boundary is immediately recycled or destroyed to prevent performance waste.\n' +
+        '# 4. Enemies & Spawner\n' +
+        '• Enemy Behavior: Create distinct movement paths for different types of enemies (e.g., flying straight down, moving in an S-pattern, or hovering in the air for a while before exiting).\n' +
+        '• Spawn Manager:\n' +
+        '◦ Timed Spawning: Use a Coroutine or a timer to spawn enemies at random coordinates along the top of the screen every few seconds.\n' +
+        '◦ Level Scripting (Timeline): An advanced approach is to write an XML/JSON configuration table or timeline. This specifies that Enemy Minion A appears at 10 seconds, Elite Monster B appears at 30 seconds, and the Boss appears at 60 seconds.\n' +
+        '# 5. Collision & HP\n' +
+        '• Collision Masking (Layer Matrix): Clearly separate collision layers to prevent accidental interactions like "enemy bullets hitting enemies" or "player bullets hitting the player".\n' +
+        '◦ Player Bullets should only collide with Enemies / Enemy Bullets.\n' +
+        '◦ Enemy Bullets should only collide with the Player.\n' +
+        '• On-Hit Trigger: When a collision is detected (OnTriggerEnter), execute the following:\n' +
+        '> 1. Deduct HP from the target.\n' +
+        '> 2. Spawn explosion visual effects (VFX) and play sound effects (SFX).\n' +
+        '> 3. If HP <= 0, trigger the destruction logic (lose a life/Game Over for the player, or award points for an enemy).\n' +
+        '# 6. Game Loop & UI System\n' +
+        '• Score & Core Data: Create a GameManager to keep track of the current score and the player\'s remaining lives.\n' +
+        '• UI Interface: Design a Heads-Up Display (HUD) to display the health bar, bomb count, and current score.\n' +
+        '• State Management: Handle the state machine transitions between: Main Menu → In-Game → Paused → Player Death → Game Over / Restart.',
       // "About Arc Games" body text (English). The CJK-first font renders a curly apostrophe as a wide glyph, so plain apostrophes are used
       'about.body.2':
         'The name "ARC\'s Concept Play-Chamber" (ARCの概遊庫) was inspired by a Chinese wordplay on "building an oil depot" (Gai You Ku), which in this context stands for a "Concept Game Repository." My hope is that my own work, alongside the creations of all fellow developers, can be just like that "oil depot"—bringing in massive wealth and striking it rich!\n' +

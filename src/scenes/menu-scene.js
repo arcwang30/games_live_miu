@@ -407,14 +407,29 @@
     }
 
     // 文字斷行 + 每行的位置（依語言快取；\n 換段）
+    // 段落開頭可以加一個標記符號 + 空白來改變樣式（沒有標記 = 一般段落）：
+    //   # 標題（金色大字）　• 項目　◦ 次項目（前面畫圓點、縮排）　> 次項目的接續（縮排、不畫圓點；例如自己帶編號 1. 2. 3.）
     aboutLayout(ctx, key) {
       const ck = BM.I18n.lang + key;
       if (this.layout && this.layout.ck === ck) return this.layout;
+      const STYLES = {
+        '': { x: 70, size: 16, gap: 12 },
+        '#': { x: 70, size: 18, weight: '900', color: '#ffd166', before: 8, gap: 6 },
+        '•': { x: 86, gx: 70, size: 16, gap: 6 },
+        '◦': { x: 106, gx: 90, size: 16, gap: 6 },
+        '>': { x: 106, size: 16, gap: 6 }
+      };
       const lines = [];
       let y = 14;
       for (const para of L(key).split('\n')) {
-        for (const ln of D.wrap(ctx, para, 396, 16)) { lines.push({ t: ln, y }); y += 26; }
-        y += 12;
+        const m = /^([#•◦>]) /.exec(para), st = STYLES[m ? m[1] : ''], text = m ? para.slice(2) : para;
+        if (st.before && lines.length) y += st.before;
+        const wrapped = D.wrap(ctx, text, 466 - st.x, st.size, st.weight);
+        wrapped.forEach((t, i) => {
+          lines.push({ t, y, x: st.x, size: st.size, weight: st.weight, color: st.color, glyph: i === 0 && st.gx ? m[1] : '', gx: st.gx });
+          y += st.size + 10;
+        });
+        y += st.gap;
       }
       return (this.layout = { ck, lines, h: y + 6 });
     }
@@ -451,7 +466,10 @@
       }
       for (const ln of lay.lines) {
         const y = top + logoH + ln.y;
-        if (y > A.y0 - 20 && y < A.y1 + 20) D.text(ctx, ln.t, 70, y, { size: 16, color: '#e6ecff' });
+        if (y > A.y0 - 20 && y < A.y1 + 20) {
+          D.text(ctx, ln.t, ln.x, y, { size: ln.size, weight: ln.weight, color: ln.color || '#e6ecff' });
+          if (ln.glyph) D.text(ctx, ln.glyph, ln.gx, y, { size: ln.size, color: '#ffd166' });
+        }
       }
       ctx.restore();
 

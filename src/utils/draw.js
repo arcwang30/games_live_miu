@@ -2,7 +2,7 @@
 (function (BM) {
   // 中文字型在前；日文字型排在後面（日文假名 / 日文漢字缺字時會自動使用）
   const CJK = '"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC","Yu Gothic UI","Meiryo","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
-  const NO_LINE_START = '，。、！？；：）」』》】〕…—～,.!?;:)]}%';   // 不能放在行首的標點
+  const NO_LINE_START = '，。、！？；：）」』》】〕…—～,.!?;:)]}%ー・ぁぃぅぇぉっゃゅょゎァィゥェォッャュョヮ';   // 不能放在行首的標點（含日文長音符號與小寫假名）
   const TOKEN = /[^\s⺀-￿]+|\s+|[⺀-￿]/gu;   // 斷行用的單位：英文單字 / 空白 / 單一個中日文字
   const NUM = '"Courier New",Consolas,"Liberation Mono",monospace';
 
