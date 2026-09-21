@@ -22,7 +22,8 @@
       this.rippled = true;
       this.score = 0;
       this.reserve = C.START_LIVES;
-      this.nextExtra = C.EXTRA_LIFE_EVERY;
+      this.extraN = 1;                                     // 下一台加命是第幾台
+      this.nextExtra = this.extraAt(1);                    // 下一台加命需要的分數
       BM.Storage.refresh();            // 重新取得雲端榜單（HI-SCORE 是全球最高分；結算時判斷是否進榜也用它）
       this.hiBase = BM.Storage.best();
       this.wave = 0;
@@ -155,10 +156,14 @@
       BM.Game.setScene('gameover', { score: this.score, wave: this.wave });   // 進榜與簽名交給結算畫面處理
     }
 
+    // 第 n 台加命的分數：越後面越難（3 萬、9 萬、18 萬、30 萬、45 萬…），不會滿到用不完
+    extraAt(n) { return C.EXTRA_LIFE_UNIT * n * (n + 1); }
+
     addScore(n) {
       this.score = Math.min(C.MAX_SCORE, this.score + n);
       while (this.score >= this.nextExtra) {
-        this.nextExtra += C.EXTRA_LIFE_EVERY;
+        this.extraN++;
+        this.nextExtra = this.extraAt(this.extraN);
         if (this.reserve < C.MAX_LIVES) {
           this.reserve++;
           BM.Popups.add(this.player.x, this.player.y - 40, '1UP', '#8dffb0');

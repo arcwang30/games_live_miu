@@ -73,20 +73,18 @@
       // 右上：目前波數（BOSS 波標示紅色 BOSS）
       BM.HUD.drawWave(ctx, s.wave, s.boss, C.W - 16, 22);
 
-      // 右上：預備戰機（在波數下方）。最多顯示 5 隻圖示；超過 5 隻時，在最左邊多一組「戰機圖 +N」（N = 超過 5 的隻數）
-      const SHOW = 5, shown = Math.min(s.lives, SHOW);
-      for (let i = 0; i < shown; i++) {
-        BM.Sprites.draw(ctx, 'cat', C.W - 28 - i * 26, 58, 0, 0.42);
-      }
-      if (s.lives > SHOW) {
-        const label = '+' + (s.lives - SHOW);
+      // 右上：預備戰機（在波數下方）。5 隻以內：有幾隻就畫幾個圖示；超過 5 隻：只畫「戰機圖 +隻數」（例如 6 隻 = 戰機圖 +6），不再畫那 5 個圖示，避免誤導
+      const SHOW = 5;
+      if (s.lives <= SHOW) {
+        for (let i = 0; i < s.lives; i++) BM.Sprites.draw(ctx, 'cat', C.W - 28 - i * 26, 58, 0, 0.42);
+      } else {
+        const label = '+' + s.lives;
         ctx.save();
-        ctx.font = '900 20px ' + D.NUM;
+        ctx.font = '900 24px ' + D.NUM;
         const tw = ctx.measureText(label).width;
         ctx.restore();
-        const xr = C.W - 28 - (SHOW - 1) * 26 - 15;            // 這組的右緣：緊貼第 5 隻圖示的左邊
-        D.text(ctx, label, xr, 59, { size: 20, align: 'right', color: '#ffd166', stroke: '#1b1240', strokeW: 4, family: D.NUM, weight: '900' });
-        BM.Sprites.draw(ctx, 'cat', xr - tw - 14, 58, 0, 0.42);
+        D.text(ctx, label, C.W - 16, 59, { size: 24, align: 'right', color: '#ffd166', stroke: '#1b1240', strokeW: 5, family: D.NUM, weight: '900' });
+        BM.Sprites.draw(ctx, 'cat', C.W - 16 - tw - 20, 58, 0, 0.42);
       }
     }
   };

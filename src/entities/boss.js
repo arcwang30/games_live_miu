@@ -326,10 +326,9 @@
       }
       const pulse = this.state === 'fan' && this.a.stage === 'wind' ? 1 + Math.sin(t * 30) * 0.03 : 1;
       BM.Sprites.draw(ctx, 'boss_' + this.face + (this.flash > 0 ? '_hit' : ''), 0, 0, 0, pulse);
-      if (this.guarding) this.drawClaws(ctx);
       ctx.restore();
 
-      if (this.guarding) this.drawGuard(ctx, t);
+      if (this.guarding) { this.drawClaws(ctx, t); this.drawGuard(ctx, t); }
       if (this.state === 'claw' && this.a.stage === 'swipe') this.drawSlash(ctx);
       for (const f of this.puffs) {                                // 嘆氣煙圈
         const k = f.t / 1.6;
@@ -384,21 +383,46 @@
       ctx.restore();
     }
 
-    // 爪擊時舉起的大爪子
-    drawClaws(ctx) {
-      for (const s of [-1, 1]) {
-        ctx.save();
-        ctx.translate(s * 92, 18);
-        ctx.rotate(s * 0.25);
-        for (let k = -1; k <= 1; k++) {
-          ctx.beginPath();
-          ctx.moveTo(k * 10 - 5, 0); ctx.lineTo(k * 10 + 5, 0); ctx.lineTo(k * 14, 46);
-          ctx.closePath();
-          ctx.fillStyle = '#f4f8ff'; ctx.fill();
-          ctx.lineWidth = 2; ctx.strokeStyle = '#2a2438'; ctx.stroke();
-        }
-        ctx.restore();
+    // 爪擊時的大爪子：從身體伸出去，在危險扇形裡揮動 ——
+    //   蓄力：舉在揮爪的起點（扇形邊緣）、越伸越長並微微顫抖；揮爪：沿著扇形掃過去；收招：停在終點
+    //   完全伸出時爪尖剛好到判定範圍的外緣（clawOut），所以「爪子碰得到的地方」就是「會被打到的地方」
+    drawClaws(ctx, t) {
+      const a = this.a, cx = this.x + this.sx, cy = this.cy;
+      const swiping = a.stage === 'swipe', winding = a.stage === 'wind' || a.stage === 'wind2';
+      const theta = swiping ? a.theta : PI / 2 - a.dir * B.clawSweep;      // 爪子目前指的方向（收招時就是這一下的終點 = 下一下的起點）
+      const wdur = (a.stage === 'wind2' ? 0.55 : 0.95) / this.spd;
+      const ext = winding ? 0.4 + 0.6 * M.clamp(a.t / wdur, 0, 1) : 1;      // 伸出程度
+      const reach = B.clawOut * ext;                                       // 爪尖離身體中心的距離
+      const handX = Math.max(80, reach - 100);                             // 手掌的位置
+      const shake = winding ? Math.sin(t * 45) * 0.025 : 0;
+
+      ctx.save();
+      ctx.translate(cx, cy);
+      ctx.rotate(theta + shake);
+      ctx.lineJoin = 'round'; ctx.lineCap = 'round';
+      ctx.lineWidth = 3.5; ctx.strokeStyle = '#2a2438';
+
+      // 手臂
+      D.roundRect(ctx, 40, -17, handX - 40, 34, 17);
+      ctx.fillStyle = '#d9e2f4'; ctx.fill(); ctx.stroke();
+      // 三根大爪（往外張開，爪尖朝向外緣）
+      if (swiping) { ctx.shadowColor = 'rgba(255,60,60,0.95)'; ctx.shadowBlur = 22; }
+      for (let k = -1; k <= 1; k++) {
+        const bx = handX + 18, by = k * 22, tx = reach, ty = k * 58 * ext;
+        ctx.beginPath();
+        ctx.moveTo(bx, by - 11);
+        ctx.quadraticCurveTo((bx + tx) / 2, (by + ty) / 2 - 16 - k * 6, tx, ty);            // 外側彎弧
+        ctx.quadraticCurveTo((bx + tx) / 2 + 6, (by + ty) / 2 + 8 - k * 6, bx, by + 11);    // 內側收回
+        ctx.closePath();
+        ctx.fillStyle = '#ffffff'; ctx.fill(); ctx.stroke();
       }
+      ctx.shadowBlur = 0;
+      // 手掌（蓋在爪子根部）
+      ctx.beginPath(); ctx.arc(handX, 0, 40, 0, M.TAU);
+      ctx.fillStyle = '#f4f8ff'; ctx.fill(); ctx.stroke();
+      ctx.beginPath(); ctx.arc(handX - 6, 4, 22, 0.4, PI - 0.4);                            // 手套上的皺褶線
+      ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(42,36,56,0.45)'; ctx.stroke();
+      ctx.restore();
     }
 
     // 反彈護盾
