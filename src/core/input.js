@@ -15,6 +15,7 @@
   let pendingMove = false;
   let keyActivity = false;
   let typedNow = [];                       // 這個 frame 敲下的英數字（簽名用）
+  let wheelAcc = 0, dragAcc = 0, downNow = false, downPos = null, lastY = 0;   // 滾輪 / 按住拖曳的累積量（邏輯座標，捲動長文字用）
   let padEdges = [];                       // 這個 frame 剛按下的手把按鈕
   const navHold = { up: 0, down: 0, left: 0, right: 0 };   // 方向鍵 / 十字鍵按住的起始時間（連發用）
   const NAV_DELAY = 400, NAV_RATE = 90;    // 按住多久開始連發、連發間隔（毫秒）
@@ -46,6 +47,10 @@
     },
     // 簽名輸入用（只有簽名畫面會用到）：
     textMode: false,       // true 時鍵盤字母不會觸發 M 靜音 / F 全螢幕
+    wheel: 0,              // 本 frame 滑鼠滾輪的捲動量（邏輯座標像素，往下滾為正）
+    drag: 0,               // 本 frame 按住畫面上下拖曳的量（手指往上拖 = 正，內容往下捲）
+    pointerDown: false,    // 現在有沒有按住（滑鼠左鍵 / 手指）
+    downPos: null,         // 這次按下時的位置 {x, y}
     typed: [],             // 本 frame 敲下的英數字（'A'~'Z'、'0'~'9'；含主鍵盤與數字鍵盤）
     nav: { up: false, down: false, left: false, right: false },   // 只含「方向鍵 + 手把方向」（不含 WASD，WASD 是字母），按住會連發
     pad: null,
@@ -70,14 +75,24 @@
       });
       window.addEventListener('keyup', e => { held[e.code] = false; });
       window.addEventListener('blur', () => { for (const k in held) held[k] = false; });
-      canvas.addEventListener('pointermove', e => { I.pointer = toLogical(e); pendingMove = true; });
+      canvas.addEventListener('pointermove', e => {
+        I.pointer = toLogical(e); pendingMove = true;
+        if (downNow) { dragAcc += lastY - I.pointer.y; lastY = I.pointer.y; }      // 按住拖曳：往上拖 = 內容往下捲
+      });
+      canvas.addEventListener('wheel', e => {                                     // 滑鼠滾輪（長文字捲動用）
+        const r = canvas.getBoundingClientRect();
+        wheelAcc += e.deltaY * (e.deltaMode === 1 ? 20 : 1) * BM.CONFIG.W / r.width;
+        e.preventDefault();
+      }, { passive: false });
       canvas.addEventListener('pointerdown', e => {
         I.pointer = toLogical(e);
         pendingClick = { x: I.pointer.x, y: I.pointer.y };
+        downNow = true; downPos = { x: I.pointer.x, y: I.pointer.y }; lastY = I.pointer.y;
         BM.Audio.unlock();
       });
       // 手機瀏覽器要在手指「放開」時才算使用者操作，這時才能解鎖音效
-      window.addEventListener('pointerup', () => BM.Audio.unlock());
+      window.addEventListener('pointerup', () => { downNow = false; BM.Audio.unlock(); });
+      window.addEventListener('pointercancel', () => { downNow = false; });
       window.addEventListener('gamepadconnected', e => {
         if (BM.Game) BM.Game.toast('已連接遊戲控制器：' + e.gamepad.id.slice(0, 28));
       });
@@ -167,6 +182,8 @@
 
       this.moved = pendingMove;
       this.click = pendingClick;
+      this.wheel = wheelAcc; this.drag = dragAcc; wheelAcc = 0; dragAcc = 0;
+      this.pointerDown = downNow; this.downPos = downPos;
       padPrev = cur;
       stickPrev = stick;
     },

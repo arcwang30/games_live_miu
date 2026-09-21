@@ -49,7 +49,7 @@ M：音效開關　F：全螢幕。控制器連接後按任一鍵即可被瀏覽
 | `src/systems/` | 系統：敵機陣形、進場隊形（起司月亮）、4 種敵機 AI、波次與出擊調度 |
 | `src/ui/` | 貼圖（程式繪製）、背景、HUD |
 | `src/utils/` | 共用工具：數學、繪圖、排行榜（雲端連線 `cloud.js` + 榜單快取 `storage.js`） |
-| `assets/` | 外部素材：`images/sprites/player.png`（主角：貓咪噴射背包戰機）。其餘美術與音效皆由程式產生，其他子資料夾預留給之後的素材 |
+| `assets/` | 外部素材：`images/sprites/player.png`（主角：貓咪噴射背包戰機）、`images/ui/arc-logo.webp`（「關於Arc遊戲庫」頁的 LOGO）。其餘美術與音效皆由程式產生，其他子資料夾預留給之後的素材 |
 | `styles/` | CSS 樣式 |
 | `docs/` | 設計文件 |
 | `tests/` | 測試 |

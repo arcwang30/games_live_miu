@@ -2,6 +2,8 @@
 (function (BM) {
   // 中文字型在前；日文字型排在後面（日文假名 / 日文漢字缺字時會自動使用）
   const CJK = '"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC","Yu Gothic UI","Meiryo","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
+  const NO_LINE_START = '，。、！？；：）」』》】〕…—～,.!?;:)]}%';   // 不能放在行首的標點
+  const TOKEN = /[^\s⺀-￿]+|\s+|[⺀-￿]/gu;   // 斷行用的單位：英文單字 / 空白 / 單一個中日文字
   const NUM = '"Courier New",Consolas,"Liberation Mono",monospace';
 
   const Draw = BM.Draw = {
@@ -34,17 +36,23 @@
       ctx.restore();
     },
 
-    // 依寬度斷行：有空白的（英文）依單字斷，沒有空白的（中日文）逐字斷
+    // 依寬度斷行。把文字拆成「一個英文單字（連續的非空白、非中日文字元）」與「一個中日文字」兩種單位：
+    // 英文只在空白處斷，中日文可以逐字斷，兩種混在一起（例如日文句子中間有半形空白）也能正確處理。
+    // 中日文的句號、逗號、右引號等不能出現在一行的開頭（避頭標點）：這種字元寧可讓上一行多擠出一點點。
     wrap(ctx, str, maxW, size, weight) {
       ctx.save();
       ctx.font = (weight || '700') + ' ' + size + 'px ' + CJK;
-      const spaced = str.indexOf(' ') >= 0;
-      const parts = spaced ? str.split(' ') : Array.from(str), sep = spaced ? ' ' : '';
       const lines = [];
-      let cur = '';
-      for (const p of parts) {
-        const test = cur ? cur + sep + p : p;
-        if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = p; } else cur = test;
+      let cur = '', gap = '';
+      for (const tok of (str.match(TOKEN) || [])) {
+        if (/^\s+$/.test(tok)) { gap = ' '; continue; }
+        const units = tok.length > 1 && ctx.measureText(tok).width > maxW ? Array.from(tok) : [tok];   // 單一「單字」比整行還寬（網址等）：逐字拆開
+        for (let i = 0; i < units.length; i++) {
+          const u = units[i], test = cur ? cur + (i === 0 ? gap : '') + u : u;
+          if (cur && ctx.measureText(test).width > maxW && !(u.length === 1 && NO_LINE_START.indexOf(u) >= 0)) { lines.push(cur); cur = u; }
+          else cur = test;
+        }
+        gap = '';
       }
       if (cur) lines.push(cur);
       ctx.restore();

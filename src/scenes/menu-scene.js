@@ -1,8 +1,8 @@
 // 主選單：開始遊戲 / 排行榜 / 操作說明 / 設定
 //   操作說明：兩個頁籤 —「操作」「敵機介紹」
 //   設定：三個頁籤（由左至右）—「語言」「了解歷史」「CREDIT」，預設「語言」；
-//         「了解歷史」內含 3 個分頁：關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（內文之後補上）
-// 頁籤操作：← → 切換頁籤、（語言 / 關於頁籤）↑ ↓ 選擇、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
+//         「了解歷史」內含 3 個分頁：關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（前兩個內文之後補上；第三個有 LOGO、長文字與粉絲團連結按鈕）
+// 頁籤操作：← → 切換頁籤、（語言頁籤）↑ ↓ 選擇、（關於頁籤）↑ ↓ / 滾輪 / 拖曳捲動（捲到頭尾再按 = 換分頁）、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
 (function (BM) {
   const C = BM.CONFIG, W = C.W, M = BM.M, D = BM.Draw, I = BM.Input;
   const L = (k, v) => BM.I18n.t(k, v);
@@ -17,6 +17,7 @@
   const BACK = { x: W / 2, y: 846, w: 210, h: 50 };      // 返回按鈕
   const LANGS = [{ id: 'zh', label: '中文' }, { id: 'ja', label: '日本語' }, { id: 'en', label: 'English' }];
   const LANG_ROW = { y0: 330, gap: 84, w: 320, h: 58 };
+  const FB_BTN = { y: 762, w: 300, h: 44 };              // 「關於Arc遊戲庫」頁的粉絲團按鈕
 
   // 設定頁面的頁籤順序（由左至右）；進入設定時預設停在第 0 個「語言」
   const SET_TAB = { LANG: 0, HISTORY: 1, CREDIT: 2 };
@@ -29,6 +30,10 @@
       this.idx = 0;
       this.tab = 0;                // howto：0 操作 1 敵機介紹；settings：見 SET_TAB（0 語言 1 了解歷史 2 CREDIT），預設 0 = 語言
       this.sub = 0;                // 關於頁籤裡的分頁
+      this.scroll = 0;             // 關於頁籤裡文字的捲動量（往下捲為正）
+      this.aboutH = 0;
+      if (!this.logo) { this.logo = new Image(); this.logo.src = 'assets/images/ui/arc-logo.webp?v=' + C.VERSION; }   // 「關於Arc遊戲庫」的 LOGO
+      this.makeFbLink();
       this.langIdx = Math.max(0, LANGS.findIndex(l => l.id === BM.I18n.lang));
       this.t = 0;
       this.mice = [];
@@ -38,7 +43,7 @@
       this.jet = new BM.JetFx();
       BM.Audio.playMusic('menu');
     }
-    exit() {}
+    exit() { this.showFb(false); }
 
     // 主選單主角：在畫面中央左右來回飄移（±110px）、上下輕微起伏，機身依移動方向傾斜
     hero(t) {
@@ -57,7 +62,7 @@
       BM.Audio.sfx('select');
       if (i === 0) BM.Game.setScene('play');
       else {
-        this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0;
+        this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0; this.scroll = 0; this.aboutH = 1e9;
         if (this.mode === 'ranking') BM.Storage.refresh();          // 進排行榜時重新取得雲端榜單
       }
     }
@@ -126,9 +131,8 @@
         if (P.up) { this.langIdx = (this.langIdx + 2) % 3; BM.Audio.sfx('move'); }
         if (P.down) { this.langIdx = (this.langIdx + 1) % 3; BM.Audio.sfx('move'); }
         if (P.confirm) this.applyLang(this.langIdx);
-      } else if (settings && this.tab === SET_TAB.HISTORY) {       // 了解歷史：↑↓ 切換分頁
-        if (P.up) { this.sub = (this.sub + 2) % 3; BM.Audio.sfx('move'); }
-        if (P.down) { this.sub = (this.sub + 1) % 3; BM.Audio.sfx('move'); }
+      } else if (settings && this.tab === SET_TAB.HISTORY) {       // 了解歷史：↑↓ / 滾輪 / 拖曳 捲動長文字，捲到頭尾再按一次 = 換分頁
+        this.updateAbout(P);
       }
 
       const c = I.click;
@@ -138,19 +142,76 @@
       if (settings && this.tab === SET_TAB.LANG) {
         for (let i = 0; i < 3; i++) if (inRect(c, this.langRect(i))) { this.applyLang(i); return; }
       } else if (settings && this.tab === SET_TAB.HISTORY) {
-        for (let i = 0; i < 3; i++) if (inRect(c, this.subRect(i))) { if (this.sub !== i) { this.sub = i; BM.Audio.sfx('move'); } return; }
+        for (let i = 0; i < 3; i++) if (inRect(c, this.subRect(i))) { this.setSub(i); return; }
       }
+    }
+
+    // ---- 「了解歷史」的分頁與長文字捲動 ----
+    setSub(i) { if (i !== this.sub) { this.sub = i; this.scroll = 0; this.aboutH = 1e9; BM.Audio.sfx('move'); } }   // aboutH 在下一次繪製前先當成「很長」，避免還沒量好高度就誤判到底而連跳分頁
+
+    // 文字的可視範圍（有粉絲團按鈕的「關於Arc遊戲庫」頁要留出按鈕的位置）
+    aboutCard() { return this.sub === 2 ? { y: 306, h: 418, y0: 362, y1: 712 } : { y: 306, h: 470, y0: 362, y1: 764 }; }
+
+    updateAbout(P) {
+      const A = this.aboutCard(), viewH = A.y1 - A.y0, max = Math.max(0, this.aboutH - viewH);
+      const N = I.nav;
+      if (P.down && this.scroll >= max - 0.5) { this.setSub((this.sub + 1) % 3); return; }      // 已經在底了，再按一次 ↓ = 下一個分頁
+      if (P.up && this.scroll <= 0) { this.setSub((this.sub + 2) % 3); return; }                 // 已經在頂了，再按一次 ↑ = 上一個分頁
+      let d = 0;
+      if (N.down || P.down) d += 52;                                                             // ↑ ↓（按住連發）/ W S / 手把方向
+      if (N.up || P.up) d -= 52;
+      if (I.key('PageDown')) d += viewH * 0.85;
+      if (I.key('PageUp')) d -= viewH * 0.85;
+      if (I.key('End')) d += 1e6;
+      if (I.key('Home')) d -= 1e6;
+      d += I.wheel;                                                                              // 滑鼠滾輪
+      const dp = I.downPos;
+      if (I.pointerDown && dp && dp.x > 50 && dp.x < 490 && dp.y > 306 && dp.y < A.y1 + 12) d += I.drag;   // 手指 / 滑鼠在文字區按住上下拖曳
+      this.scroll = M.clamp(this.scroll + d, 0, max);
+      if (this.sub === 2 && P.confirm) this.openFan();                                           // Enter / 空白鍵 / 手把 A：開粉絲團
+    }
+
+    // ---- 粉絲團連結：用一個透明的 <a> 蓋在畫面上的按鈕上（手機 / 滑鼠直接點就是真的連結，不會被瀏覽器當成彈出視窗擋掉）；
+    //      鍵盤 / 手把按確認則用 window.open（被擋住時顯示提示） ----
+    makeFbLink() {
+      if (this.fbLink) return;
+      const a = document.createElement('a');
+      a.href = C.LINKS.fanPage; a.target = '_blank'; a.rel = 'noopener noreferrer';
+      a.setAttribute('aria-label', 'Facebook'); a.tabIndex = -1;
+      a.style.cssText = 'position:fixed;display:none;z-index:50;background:transparent;cursor:pointer;outline:none;-webkit-tap-highlight-color:transparent;';
+      a.addEventListener('click', () => BM.Audio.sfx('select'));
+      document.body.appendChild(a);
+      this.fbLink = a;
+    }
+    showFb(vis) {
+      const a = this.fbLink;
+      if (!a) return;
+      if (!vis) { a.style.display = 'none'; return; }
+      const r = document.getElementById('game').getBoundingClientRect(), b = FB_BTN;
+      a.style.display = 'block';
+      a.style.left = (r.left + (W / 2 - b.w / 2) / W * r.width) + 'px';
+      a.style.top = (r.top + (b.y - b.h / 2) / C.H * r.height) + 'px';
+      a.style.width = (b.w / W * r.width) + 'px';
+      a.style.height = (b.h / C.H * r.height) + 'px';
+    }
+    openFan() {
+      BM.Audio.sfx('select');
+      const w = window.open(C.LINKS.fanPage, '_blank');
+      if (w) { try { w.opener = null; } catch (e) { /* ignore */ } }
+      else BM.Game.toast(L('about.fb.blocked'));
     }
 
     // ------------------------------------------------ 繪製
     draw(ctx) {
       const t = this.t;
       BM.Background.draw(ctx, t);
+      this.fbShow = false;                                          // 粉絲團連結只在「關於Arc遊戲庫」頁顯示（drawAbout 會設為 true）
 
       if (this.mode === 'main') this.drawMain(ctx, t);
       else if (this.mode === 'ranking') this.drawRanking(ctx, t);
       else if (this.mode === 'howto') this.drawHowTo(ctx, t);
       else this.drawSettings(ctx, t);
+      this.showFb(this.fbShow);
     }
 
     drawMain(ctx, t) {
@@ -225,9 +286,9 @@
     }
 
     // 底部：返回按鈕 + 操作提示
-    footer(ctx, t, keysKey) {
+    footer(ctx, t, keysKey, tapKey) {
       D.button(ctx, L('nav.back'), BACK.x, BACK.y, BACK.w, BACK.h, false, t);
-      D.text(ctx, BM.Touch.enabled ? L('nav.tap') : L(keysKey || 'nav.keys'), W / 2, 882, { size: 13, align: 'center', color: '#9fb0e8', maxW: 440 });
+      D.text(ctx, BM.Touch.enabled ? L(tapKey || 'nav.tap') : L(keysKey || 'nav.keys'), W / 2, 882, { size: 13, align: 'center', color: '#9fb0e8', maxW: 440 });
     }
 
     drawRanking(ctx, t) {
@@ -309,9 +370,9 @@
       this.panel(ctx, L('settings.title'));
       this.tabs(ctx, this.tabLabels(), this.tab, i => this.tabRect(i, 3), 15);
       if (this.tab === SET_TAB.LANG) this.drawLanguage(ctx, t);
-      else if (this.tab === SET_TAB.HISTORY) this.drawAbout(ctx);
+      else if (this.tab === SET_TAB.HISTORY) this.drawAbout(ctx, t);
       else this.drawCredit(ctx);
-      this.footer(ctx, t, this.tab === SET_TAB.LANG ? 'nav.keys.lang' : this.tab === SET_TAB.HISTORY ? 'nav.keys.history' : 'nav.keys');
+      this.footer(ctx, t, this.tab === SET_TAB.LANG ? 'nav.keys.lang' : this.tab === SET_TAB.HISTORY ? 'nav.keys.history' : 'nav.keys', this.tab === SET_TAB.HISTORY ? 'nav.tap.history' : null);
     }
 
     drawCredit(ctx) {
@@ -345,23 +406,65 @@
       D.text(ctx, L('lang.hint'), W / 2, 630, { size: 16, align: 'center', color: '#9fb0e8', maxW: 400 });
     }
 
-    // 關於射擊遊戲：3 個分頁（內文之後補上，目前是「準備中」）
-    drawAbout(ctx) {
+    // 文字斷行 + 每行的位置（依語言快取；\n 換段）
+    aboutLayout(ctx, key) {
+      const ck = BM.I18n.lang + key;
+      if (this.layout && this.layout.ck === ck) return this.layout;
+      const lines = [];
+      let y = 14;
+      for (const para of L(key).split('\n')) {
+        for (const ln of D.wrap(ctx, para, 396, 16)) { lines.push({ t: ln, y }); y += 26; }
+        y += 12;
+      }
+      return (this.layout = { ck, lines, h: y + 6 });
+    }
+
+    // 「了解歷史」的 3 個分頁。有內文的分頁自動斷行、可以上下捲動（↑↓ / 滾輪 / 拖曳）；「關於Arc遊戲庫」頁最上面是 LOGO，下方固定一顆粉絲團按鈕
+    drawAbout(ctx, t) {
       const labels = [L('about.0'), L('about.1'), L('about.2')];
       this.tabs(ctx, labels, this.sub, i => this.subRect(i), 14);
+      const A = this.aboutCard(), arc = this.sub === 2;
       ctx.fillStyle = 'rgba(255,255,255,0.07)';
-      D.roundRect(ctx, 50, 306, 440, 470, 18); ctx.fill();
+      D.roundRect(ctx, 50, A.y, 440, A.h, 18); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 2; ctx.stroke();
-      D.text(ctx, labels[this.sub], W / 2, 356, { size: 28, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 400 });
+      D.text(ctx, labels[this.sub], W / 2, 336, { size: 26, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 400 });
       const bodyKey = 'about.body.' + this.sub;
       if (!BM.I18n.has(bodyKey)) {                                 // 還沒有內文：顯示「準備中」
         D.text(ctx, L('about.soon'), W / 2, 540, { size: 22, align: 'center', color: '#8f9cc8', maxW: 360 });
+        this.aboutH = 0;
         return;
       }
-      let y = 402;                                                 // 有內文：自動斷行顯示（\n 換段）
-      for (const para of L(bodyKey).split('\n')) {
-        for (const line of D.wrap(ctx, para, 396, 17)) { if (y > 760) return; D.text(ctx, line, 70, y, { size: 17, color: '#e6ecff' }); y += 28; }
-        y += 10;
+      const lay = this.aboutLayout(ctx, bodyKey), logoH = arc ? 204 : 0, viewH = A.y1 - A.y0;
+      this.aboutH = lay.h + logoH;
+      const max = Math.max(0, this.aboutH - viewH);
+      this.scroll = M.clamp(this.scroll, 0, max);
+
+      ctx.save();
+      ctx.beginPath(); ctx.rect(56, A.y0, 428, viewH); ctx.clip();  // 只畫在可視範圍裡
+      const top = A.y0 - this.scroll;
+      if (arc) {
+        const im = this.logo;
+        if (im && im.complete && im.naturalWidth) {
+          const s = 184, h = s * im.naturalHeight / im.naturalWidth;
+          ctx.drawImage(im, W / 2 - s / 2, top + 6, s, h);
+        }
+      }
+      for (const ln of lay.lines) {
+        const y = top + logoH + ln.y;
+        if (y > A.y0 - 20 && y < A.y1 + 20) D.text(ctx, ln.t, 70, y, { size: 16, color: '#e6ecff' });
+      }
+      ctx.restore();
+
+      if (max > 0) {                                               // 捲軸 + 還有更多內容的提示
+        ctx.fillStyle = 'rgba(255,255,255,0.14)'; D.roundRect(ctx, 478, A.y0, 4, viewH, 2); ctx.fill();
+        const th = Math.max(28, viewH * viewH / this.aboutH), ty = A.y0 + (viewH - th) * (this.scroll / max);
+        ctx.fillStyle = 'rgba(255,209,102,0.85)'; D.roundRect(ctx, 478, ty, 4, th, 2); ctx.fill();
+        if (this.scroll < max - 4) D.text(ctx, '▼', 458, A.y1 - 6, { size: 14, align: 'center', color: '#ffd166', alpha: 0.5 + 0.5 * Math.sin(t * 5) });
+      }
+
+      if (arc) {                                                   // 粉絲團連結按鈕（實際的點擊由蓋在上面的 <a> 處理）
+        D.button(ctx, L('about.fb'), W / 2, FB_BTN.y, FB_BTN.w, FB_BTN.h, true, t);
+        this.fbShow = true;
       }
     }
   }

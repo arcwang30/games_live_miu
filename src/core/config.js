@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.21v',
+    VERSION: '2026.09.21x',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -36,6 +36,9 @@
                  startCount: 45, perWave: 10, maxCount: 90 },
 
     ENEMY: { radius: 11, bulletRadius: 5 },
+
+    // 外部連結
+    LINKS: { fanPage: 'https://www.facebook.com/profile.php?id=61594197187795' },   // 「關於Arc遊戲庫」頁的粉絲團
 
     // 金必鼠：稀有加分鼠（不在陣形裡、不攻擊）。在畫面最上方的 zone 範圍徘徊 stay 秒後飛走；要打中 hp 發才會爆炸。
     // 出現機率：第 firstWave 波起，每個一般波 chance；連續沒出現，每波再加 chanceStep（上限 chanceMax）；BOSS 波不出現。出現時間 = 該波開始後 appear 秒
