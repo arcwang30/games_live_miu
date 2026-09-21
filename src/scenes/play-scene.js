@@ -1,7 +1,8 @@
 // 遊戲主場景：一波一群老鼠（數量隨波數增加）→ 清光進下一波；每 5 波換 BOSS → 玩家全數陣亡則結算
 (function (BM) {
   const C = BM.CONFIG, W = C.W, H = C.H, M = BM.M, D = BM.Draw, I = BM.Input;
-  const PAUSE_ITEMS = ['繼續遊戲', '回主選單'];
+  const L = (k, v) => BM.I18n.t(k, v);
+  const PAUSE_ITEMS = ['pause.resume', 'pause.menu'];
 
   class PlayScene {
     enter() {
@@ -86,7 +87,7 @@
       this.enemies = [];
       this.boss = new BM.Boss(level);
       this.state = 'boss';
-      this.banner = { text: 'WARNING!', sub: 'BOSS  流氓大老鼠 來襲', t: 0, dur: 2.6, warn: true };
+      this.banner = { text: 'WARNING!', sub: L('banner.bosswarn'), t: 0, dur: 2.6, warn: true };
       BM.Audio.playMusic('boss');
       BM.Audio.sfx('warning');
     }
@@ -97,7 +98,7 @@
       this.eBullets.length = 0;
       this.state = 'clear';
       this.stateT = 2.8;
-      this.banner = { text: text || 'WAVE CLEAR!', sub: (sub ? sub + '　' : '') + '通關獎勵 +' + bonus, t: 0, dur: 2.6 };
+      this.banner = { text: text || 'WAVE CLEAR!', sub: (sub ? sub + '　' : '') + L('banner.bonus', { n: bonus }), t: 0, dur: 2.6 };
       BM.Audio.sfx('clear');
     }
 
@@ -118,7 +119,7 @@
       const bonus = C.BOSS.killBonus * this.boss.level;
       this.addScore(bonus);
       BM.Popups.add(this.boss.x, this.boss.y, '+' + bonus, '#ffe27a');
-      this.waveClear('BOSS DEFEATED!', '擊破 BOSS +' + bonus);
+      this.waveClear('BOSS DEFEATED!', L('banner.bossdown', { n: bonus }));
     }
 
     // ---- 玩家子彈打到 BOSS 護盾：依圓形法線物理反射，變成半透明小魚彈開 ----
@@ -379,7 +380,7 @@
       ctx.scale(s, s);
       const col = b.warn ? '#ff5d5d' : '#ffd166', edge = b.warn ? '#4a0a14' : '#5b2a86';
       D.text(ctx, b.text, 0, 0, { size: b.small ? 48 : 60, align: 'center', color: col, stroke: edge, strokeW: 10, weight: '900', family: D.NUM, alpha: a, shadow: 'rgba(255,170,70,0.8)', shadowBlur: 16 });
-      if (b.sub) D.text(ctx, b.sub, 0, 56, { size: 24, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 5, weight: '900', alpha: a });
+      if (b.sub) D.text(ctx, b.sub, 0, 56, { size: 24, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 5, weight: '900', alpha: a, maxW: 480 });
       ctx.restore();
     }
 
@@ -393,11 +394,11 @@
     drawPause(ctx) {
       ctx.fillStyle = 'rgba(6,8,30,0.72)';
       ctx.fillRect(0, 0, W, H);
-      D.text(ctx, '暫停', W / 2, 340, { size: 76, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 12, weight: '900' });
+      D.text(ctx, L('pause.title'), W / 2, 340, { size: 76, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 12, weight: '900', maxW: 460 });
       for (let i = 0; i < PAUSE_ITEMS.length; i++) {
-        D.button(ctx, PAUSE_ITEMS[i], W / 2, 470 + i * 76, 300, 56, i === this.pauseIdx, this.time + performance.now() / 1000);
+        D.button(ctx, L(PAUSE_ITEMS[i]), W / 2, 470 + i * 76, 300, 56, i === this.pauseIdx, this.time + performance.now() / 1000);
       }
-      D.text(ctx, BM.Touch.enabled ? '點一下選項' : 'Esc / P / Start 繼續', W / 2, 660, { size: 16, align: 'center', color: '#9fb0e8' });
+      D.text(ctx, BM.Touch.enabled ? L('pause.hint.touch') : L('pause.hint'), W / 2, 660, { size: 16, align: 'center', color: '#9fb0e8', maxW: 440 });
     }
   }
 

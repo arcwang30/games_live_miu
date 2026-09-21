@@ -431,8 +431,10 @@
 
     // 死亡時的對話框
     drawBubble(ctx) {
-      const text = this.t < 1.1 ? '……' : '唉，下班了';
-      const bw = this.t < 1.1 ? 84 : 168, bh = 46;
+      const text = BM.I18n.t(this.t < 1.1 ? 'boss.bubble1' : 'boss.bubble2');
+      ctx.save(); ctx.font = '900 24px ' + D.CJK;
+      const bw = Math.min(330, Math.max(84, ctx.measureText(text).width + 40)), bh = 46;      // 對話框寬度依文字長度（多語系）
+      ctx.restore();
       const bx = M.clamp(this.x + 100, bw / 2 + 8, W - bw / 2 - 8), by = this.y - 108;
       ctx.save();
       ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2a2438'; ctx.lineWidth = 3;
@@ -442,7 +444,7 @@
       ctx.moveTo(bx - bw / 2 + 22, by + bh / 2 - 1); ctx.lineTo(this.x + 58, this.y - 70); ctx.lineTo(bx - bw / 2 + 46, by + bh / 2 - 1);
       ctx.fillStyle = '#fff'; ctx.fill();
       ctx.restore();
-      D.text(ctx, text, bx, by + 2, { size: 24, align: 'center', color: '#2a2438', weight: '900' });
+      D.text(ctx, text, bx, by + 2, { size: 24, align: 'center', color: '#2a2438', weight: '900', maxW: bw - 24 });
     }
   }
 

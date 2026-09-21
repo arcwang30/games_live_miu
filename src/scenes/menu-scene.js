@@ -1,21 +1,35 @@
-// 主選單：開始遊戲 / 排行榜 / 操作說明
+// 主選單：開始遊戲 / 排行榜 / 操作說明 / 設定
+//   操作說明：兩個頁籤 —「操作」「敵機介紹」
+//   設定：三個頁籤（由左至右）—「語言」「了解歷史」「CREDIT」，預設「語言」；
+//         「了解歷史」內含 3 個分頁：關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（內文之後補上）
+// 頁籤操作：← → 切換頁籤、（語言 / 關於頁籤）↑ ↓ 選擇、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
 (function (BM) {
   const C = BM.CONFIG, W = C.W, M = BM.M, D = BM.Draw, I = BM.Input;
+  const L = (k, v) => BM.I18n.t(k, v);
 
-  const ITEMS = ['開始遊戲', '排行榜', '操作說明'];
-  const BTN = { w: 300, h: 56, y0: 640, gap: 76 };
+  const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings'];
+  const BTN = { w: 300, h: 54, y0: 596, gap: 66 };
 
-  const ENEMY_INFO = [
-    ['迅捷鼠', '波浪形俯衝，途中射出瞄準彈'],
-    ['狙擊鼠', '懸停瞄準，紅線鎖定後連射（2 滴血）'],
-    ['衝撞鼠', '蓄力後追蹤衝撞，橫向閃避即可'],
-    ['旋轉鼠', '迴旋一圈半後俯衝，發射三向散彈']
-  ];
+  // 頁面（操作說明 / 設定 / 排行榜）的版面
+  const PANEL = { x: 30, y: 70, w: 480, h: 820 };
+  const TAB = { x: 50, w: 440, y: 186, h: 44 };          // 頁籤列
+  const SUB = { x: 50, w: 440, y: 268, h: 40 };          // 「關於」頁籤裡的分頁列
+  const BACK = { x: W / 2, y: 846, w: 210, h: 50 };      // 返回按鈕
+  const LANGS = [{ id: 'zh', label: '中文' }, { id: 'ja', label: '日本語' }, { id: 'en', label: 'English' }];
+  const LANG_ROW = { y0: 330, gap: 84, w: 320, h: 58 };
+
+  // 設定頁面的頁籤順序（由左至右）；進入設定時預設停在第 0 個「語言」
+  const SET_TAB = { LANG: 0, HISTORY: 1, CREDIT: 2 };
+
+  const inRect = (p, r) => p && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 
   class MenuScene {
     enter() {
-      this.mode = 'main';
+      this.mode = 'main';          // main | ranking | howto | settings
       this.idx = 0;
+      this.tab = 0;                // howto：0 操作 1 敵機介紹；settings：見 SET_TAB（0 語言 1 了解歷史 2 CREDIT），預設 0 = 語言
+      this.sub = 0;                // 關於頁籤裡的分頁
+      this.langIdx = Math.max(0, LANGS.findIndex(l => l.id === BM.I18n.lang));
       this.t = 0;
       this.mice = [];
       for (let i = 0; i < 6; i++) {
@@ -42,7 +56,27 @@
     choose(i) {
       BM.Audio.sfx('select');
       if (i === 0) BM.Game.setScene('play');
-      else this.mode = i === 1 ? 'ranking' : 'howto';
+      else { this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0; }
+    }
+
+    goMain() { this.mode = 'main'; BM.Audio.sfx('move'); }
+
+    // ---- 頁籤 ----
+    tabCount() { return this.mode === 'howto' ? 2 : 3; }
+    tabLabels() {
+      return this.mode === 'howto' ? [L('tab.controls'), L('tab.enemies')] : [L('tab.language'), L('tab.history'), L('tab.credit')];
+    }
+    tabRect(i, n) { const w = TAB.w / n; return { x: TAB.x + i * w, y: TAB.y - TAB.h / 2, w, h: TAB.h }; }
+    subRect(i) { const w = SUB.w / 3; return { x: SUB.x + i * w, y: SUB.y - SUB.h / 2, w, h: SUB.h }; }
+    langRect(i) { return { x: W / 2 - LANG_ROW.w / 2, y: LANG_ROW.y0 + i * LANG_ROW.gap - LANG_ROW.h / 2, w: LANG_ROW.w, h: LANG_ROW.h }; }
+    backRect() { return { x: BACK.x - BACK.w / 2, y: BACK.y - BACK.h / 2, w: BACK.w, h: BACK.h }; }
+
+    setTab(i) { if (i !== this.tab) { this.tab = i; BM.Audio.sfx('move'); } }
+    applyLang(i) {
+      this.langIdx = i;
+      BM.I18n.set(LANGS[i].id);
+      BM.Audio.sfx('select');
+      BM.Game.toast(L('toast.lang'));
     }
 
     update(dt) {
@@ -61,15 +95,18 @@
         return { x: h.x + nx * cs - ny * sn, y: h.y + nx * sn + ny * cs };
       }), h.vx, 0, this.mode === 'main');
 
-      if (this.mode !== 'main') {
-        if (P.confirm || P.back || I.click) { this.mode = 'main'; BM.Audio.sfx('move'); }
-        return;
-      }
-      if (P.up) { this.idx = (this.idx + ITEMS.length - 1) % ITEMS.length; BM.Audio.sfx('move'); }
-      if (P.down) { this.idx = (this.idx + 1) % ITEMS.length; BM.Audio.sfx('move'); }
+      if (this.mode === 'main') { this.updateMain(P); return; }
+      if (P.back) { this.goMain(); return; }
+      if (this.mode === 'ranking') { if (P.confirm || I.click) this.goMain(); return; }
+      this.updateTabbed(P);
+    }
+
+    updateMain(P) {
+      if (P.up) { this.idx = (this.idx + MAIN.length - 1) % MAIN.length; BM.Audio.sfx('move'); }
+      if (P.down) { this.idx = (this.idx + 1) % MAIN.length; BM.Audio.sfx('move'); }
 
       // 滑鼠：移動時選取、點擊時確認
-      for (let i = 0; i < ITEMS.length; i++) {
+      for (let i = 0; i < MAIN.length; i++) {
         const hit = p => p && Math.abs(p.x - W / 2) < BTN.w / 2 && Math.abs(p.y - this.btnY(i)) < BTN.h / 2;
         if (I.moved && hit(I.pointer) && this.idx !== i) { this.idx = i; BM.Audio.sfx('move'); }
         if (I.click && hit(I.click)) { this.idx = i; this.choose(i); return; }
@@ -77,13 +114,40 @@
       if (P.confirm) this.choose(this.idx);
     }
 
+    updateTabbed(P) {
+      const n = this.tabCount();
+      if (P.left) this.setTab((this.tab + n - 1) % n);
+      if (P.right) this.setTab((this.tab + 1) % n);
+      const settings = this.mode === 'settings';
+      if (settings && this.tab === SET_TAB.LANG) {                 // 語言：↑↓ 選擇、Enter 確認
+        if (P.up) { this.langIdx = (this.langIdx + 2) % 3; BM.Audio.sfx('move'); }
+        if (P.down) { this.langIdx = (this.langIdx + 1) % 3; BM.Audio.sfx('move'); }
+        if (P.confirm) this.applyLang(this.langIdx);
+      } else if (settings && this.tab === SET_TAB.HISTORY) {       // 了解歷史：↑↓ 切換分頁
+        if (P.up) { this.sub = (this.sub + 2) % 3; BM.Audio.sfx('move'); }
+        if (P.down) { this.sub = (this.sub + 1) % 3; BM.Audio.sfx('move'); }
+      }
+
+      const c = I.click;
+      if (!c) return;
+      if (inRect(c, this.backRect())) { this.goMain(); return; }
+      for (let i = 0; i < n; i++) if (inRect(c, this.tabRect(i, n))) { this.setTab(i); return; }
+      if (settings && this.tab === SET_TAB.LANG) {
+        for (let i = 0; i < 3; i++) if (inRect(c, this.langRect(i))) { this.applyLang(i); return; }
+      } else if (settings && this.tab === SET_TAB.HISTORY) {
+        for (let i = 0; i < 3; i++) if (inRect(c, this.subRect(i))) { if (this.sub !== i) { this.sub = i; BM.Audio.sfx('move'); } return; }
+      }
+    }
+
+    // ------------------------------------------------ 繪製
     draw(ctx) {
       const t = this.t;
       BM.Background.draw(ctx, t);
 
       if (this.mode === 'main') this.drawMain(ctx, t);
       else if (this.mode === 'ranking') this.drawRanking(ctx, t);
-      else this.drawHowTo(ctx, t);
+      else if (this.mode === 'howto') this.drawHowTo(ctx, t);
+      else this.drawSettings(ctx, t);
     }
 
     drawMain(ctx, t) {
@@ -111,18 +175,18 @@
       BM.Sprites.draw(ctx, 'fish', h.x - 24, h.y - 80 - p * 100, 0, 1.4, 1 - p);
       BM.Sprites.draw(ctx, 'fish', h.x + 24, h.y - 80 - ((p + 0.5) % 1) * 100, 0, 1.4, 1 - ((p + 0.5) % 1));
 
-      for (let i = 0; i < ITEMS.length; i++) {
-        D.button(ctx, ITEMS[i], W / 2, this.btnY(i), BTN.w, BTN.h, i === this.idx, t);
+      for (let i = 0; i < MAIN.length; i++) {
+        D.button(ctx, L(MAIN[i]), W / 2, this.btnY(i), BTN.w, BTN.h, i === this.idx, t);
       }
 
-      const pad = I.pad;
+      const pad = I.pad, hint = { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3, maxW: 500 };
       if (BM.Touch.enabled) {                          // 手機 / 平板：顯示觸控操作提示
-        D.text(ctx, '點選按鈕開始　遊戲中按住畫面，戰機在手指上方跟隨', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
-        D.text(ctx, '子彈自動連射　右上角 ⏸ 可暫停', W / 2, 918, { size: 15, align: 'center', color: '#8dffb0', stroke: '#1b1240', strokeW: 3 });
+        D.text(ctx, L('hint.touch1'), W / 2, 890, hint);
+        D.text(ctx, L('hint.touch2'), W / 2, 918, { size: 15, align: 'center', color: '#8dffb0', stroke: '#1b1240', strokeW: 3, maxW: 500 });
       } else {
-        D.text(ctx, '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認', W / 2, 890, { size: 16, align: 'center', color: '#dfe6ff', stroke: '#1b1240', strokeW: 3 });
-        D.text(ctx, pad ? '● 已偵測到遊戲控制器' : '○ 支援遊戲控制器（連接後按任一鍵）', W / 2, 918, { size: 15, align: 'center', color: pad ? '#8dffb0' : '#9aa8d8', stroke: '#1b1240', strokeW: 3 });
-        D.text(ctx, 'M 音效開關　F 全螢幕', W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8' });
+        D.text(ctx, L('hint.kb'), W / 2, 890, hint);
+        D.text(ctx, pad ? L('hint.pad.yes') : L('hint.pad.no'), W / 2, 918, { size: 15, align: 'center', color: pad ? '#8dffb0' : '#9aa8d8', stroke: '#1b1240', strokeW: 3, maxW: 460 });
+        D.text(ctx, L('hint.keys'), W / 2, 942, { size: 13, align: 'center', color: '#8f9cc8', maxW: 220 });
       }
 
       // 左下角版本號（檢查有沒有更新到最新版用）
@@ -132,17 +196,39 @@
       D.text(ctx, "© Arc's Concept Game", W - 12, 943, { size: 16, align: 'right', color: '#5b2a86', stroke: '#ffffff', strokeW: 4, weight: '900' });
     }
 
+    // ---- 頁面共用元件 ----
     panel(ctx, title) {
-      ctx.fillStyle = 'rgba(8,10,40,0.72)';
-      D.roundRect(ctx, 30, 70, W - 60, 820, 26);
+      ctx.fillStyle = 'rgba(8,10,40,0.74)';
+      D.roundRect(ctx, PANEL.x, PANEL.y, PANEL.w, PANEL.h, 26);
       ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.2)'; ctx.lineWidth = 2; ctx.stroke();
-      D.text(ctx, title, W / 2, 122, { size: 42, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 8, weight: '900' });
-      D.text(ctx, BM.Touch.enabled ? '點一下畫面返回' : '按 Enter / 空白鍵 / B 返回', W / 2, 858, { size: 16, align: 'center', color: '#9fb0e8' });
+      D.text(ctx, title, W / 2, 122, { size: 42, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 8, weight: '900', maxW: 420 });
+    }
+
+    // 頁籤列；rects 由 rect(i) 提供，active 是目前頁籤
+    tabs(ctx, labels, active, rect, size) {
+      for (let i = 0; i < labels.length; i++) {
+        const r = rect(i), on = i === active;
+        D.roundRect(ctx, r.x + 3, r.y, r.w - 6, r.h, 12);
+        if (on) {
+          const g = ctx.createLinearGradient(0, r.y, 0, r.y + r.h);
+          g.addColorStop(0, '#ffd166'); g.addColorStop(1, '#ff9a48');
+          ctx.fillStyle = g;
+        } else ctx.fillStyle = 'rgba(255,255,255,0.10)';
+        ctx.fill();
+        ctx.lineWidth = 2; ctx.strokeStyle = on ? '#fff3d6' : 'rgba(255,255,255,0.22)'; ctx.stroke();
+        D.text(ctx, labels[i], r.x + r.w / 2, r.y + r.h / 2 + 1, { size: size || 17, align: 'center', color: on ? '#3a1d0a' : '#cfd8ff', weight: '900', maxW: r.w - 18 });
+      }
+    }
+
+    // 底部：返回按鈕 + 操作提示
+    footer(ctx, t, keysKey) {
+      D.button(ctx, L('nav.back'), BACK.x, BACK.y, BACK.w, BACK.h, false, t);
+      D.text(ctx, BM.Touch.enabled ? L('nav.tap') : L(keysKey || 'nav.keys'), W / 2, 882, { size: 13, align: 'center', color: '#9fb0e8', maxW: 440 });
     }
 
     drawRanking(ctx, t) {
-      this.panel(ctx, '排行榜');
+      this.panel(ctx, L('ranking.title'));
       const list = BM.Storage.list().slice(0, 5);
       const medal = ['#ffd166', '#cfd6e6', '#e0a070', '#8fa0d0', '#8fa0d0'];
       for (let i = 0; i < 5; i++) {
@@ -157,42 +243,112 @@
           D.text(ctx, '--------', 150, y, { size: 30, color: '#5b688f', family: D.NUM, weight: '900' });
         }
       }
-      if (!list.length) D.text(ctx, '還沒有紀錄，快去挑戰吧！', W / 2, 790, { size: 20, align: 'center', color: '#bcd0ff' });
+      if (!list.length) D.text(ctx, L('ranking.empty'), W / 2, 790, { size: 20, align: 'center', color: '#bcd0ff', maxW: 420 });
+      D.button(ctx, L('nav.back'), BACK.x, BACK.y, BACK.w, BACK.h, false, t);
     }
 
+    // ---- 操作說明：「操作」「敵機介紹」兩個頁籤 ----
     drawHowTo(ctx, t) {
-      this.panel(ctx, '操作說明');
-      const rows = [
-        ['移動', '方向鍵 / WASD', '左搖桿 / 十字鍵'],
-        ['射擊', '空白鍵（可按住連發）', 'A / X / Y / RB / RT'],
-        ['暫停', 'Esc / P', 'Start']
-      ];
-      D.text(ctx, '鍵盤', 140, 178, { size: 16, color: '#7fe9ff', weight: '900' });
-      D.text(ctx, '遊戲控制器', 330, 178, { size: 16, color: '#8dffb0', weight: '900' });
+      this.panel(ctx, L('howto.title'));
+      this.tabs(ctx, this.tabLabels(), this.tab, i => this.tabRect(i, 2));
+      if (this.tab === 0) this.drawControls(ctx);
+      else this.drawEnemies(ctx, t);
+      this.footer(ctx, t);
+    }
+
+    drawControls(ctx) {
+      D.text(ctx, L('ctrl.keyboard'), 210, 270, { size: 17, align: 'center', color: '#7fe9ff', weight: '900', maxW: 160 });
+      D.text(ctx, L('ctrl.gamepad'), 395, 270, { size: 17, align: 'center', color: '#8dffb0', weight: '900', maxW: 160 });
+      const rows = [['ctrl.move', 'ctrl.move.kb', 'ctrl.move.pad'], ['ctrl.fire', 'ctrl.fire.kb', 'ctrl.fire.pad'], ['ctrl.pause', 'ctrl.pause.kb', 'ctrl.pause.pad']];
       for (let i = 0; i < rows.length; i++) {
-        const y = 214 + i * 50;
-        D.text(ctx, rows[i][0], 64, y, { size: 22, color: '#ffd166', weight: '900' });
-        D.text(ctx, rows[i][1], 140, y, { size: 16, color: '#fff' });
-        D.text(ctx, rows[i][2], 330, y, { size: 15, color: '#dfe6ff' });
+        const y = 316 + i * 56;
+        ctx.fillStyle = 'rgba(255,255,255,0.06)';
+        D.roundRect(ctx, 50, y - 24, 440, 48, 12); ctx.fill();
+        D.text(ctx, L(rows[i][0]), 62, y, { size: 21, color: '#ffd166', weight: '900', maxW: 84 });
+        D.text(ctx, L(rows[i][1]), 210, y, { size: 16, align: 'center', color: '#fff', maxW: 170 });
+        D.text(ctx, L(rows[i][2]), 395, y, { size: 15, align: 'center', color: '#dfe6ff', maxW: 160 });
       }
-      // 手機 / 平板觸控
-      D.text(ctx, '手機觸控', 64, 352, { size: 22, color: '#ffd166', weight: '900' });
-      D.text(ctx, '按住畫面：戰機飛到手指正上方並跟隨移動（不被手指擋住）', 140, 348, { size: 14, color: '#fff' });
-      D.text(ctx, '放開再點新位置，戰機快速飛過去；子彈自動連射；右上 ⏸ 暫停', 140, 370, { size: 13, color: '#dfe6ff' });
 
-      D.text(ctx, '消滅所有老鼠進入下一波！每 30000 分多一台戰機', W / 2, 410, { size: 16, align: 'center', color: '#bcd0ff' });
-      D.text(ctx, '每 5 波出現 BOSS「流氓大老鼠」，他揮爪時會反彈子彈！', W / 2, 436, { size: 16, align: 'center', color: '#ff9ecb', weight: '900' });
+      D.text(ctx, L('ctrl.touch'), 62, 508, { size: 21, color: '#ffd166', weight: '900', maxW: 200 });
+      const lines = ['ctrl.touch1', 'ctrl.touch2', 'ctrl.touch3'];
+      for (let i = 0; i < lines.length; i++) D.text(ctx, '• ' + L(lines[i]), 66, 548 + i * 34, { size: 16, color: i === 0 ? '#fff' : '#dfe6ff', maxW: 410 });
 
-      D.text(ctx, '— 敵機介紹 —', W / 2, 474, { size: 24, align: 'center', color: '#ffd166', weight: '900' });
+      D.text(ctx, L('ctrl.tip'), W / 2, 690, { size: 17, align: 'center', color: '#bcd0ff', maxW: 430 });
+      D.text(ctx, L('hint.keys'), W / 2, 730, { size: 14, align: 'center', color: '#8f9cc8', maxW: 400 });
+    }
+
+    drawEnemies(ctx, t) {
       for (let i = 0; i < 4; i++) {
-        const y = 546 + i * 76;
+        const y = 310 + i * 112;
         ctx.fillStyle = 'rgba(255,255,255,0.08)';
-        D.roundRect(ctx, 56, y - 34, W - 112, 68, 14); ctx.fill();
-        BM.Sprites.draw(ctx, 'mouse' + i, 106, y, Math.sin(t * 2 + i) * 0.2, 1.5);
-        D.text(ctx, ENEMY_INFO[i][0], 156, y - 12, { size: 22, color: BM.Enemy.TYPES[i].color, stroke: '#1b1240', strokeW: 4, weight: '900' });
-        D.text(ctx, ENEMY_INFO[i][1], 156, y + 16, { size: 15, color: '#e6ecff' });
+        D.roundRect(ctx, 56, y - 48, W - 112, 96, 16); ctx.fill();
+        BM.Sprites.draw(ctx, 'mouse' + i, 112, y, Math.sin(t * 2 + i) * 0.2, 1.9);
+        D.text(ctx, L('enemy.' + i + '.name'), 172, y - 24, { size: 24, color: BM.Enemy.TYPES[i].color, stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 300 });
+        const lines = D.wrap(ctx, L('enemy.' + i + '.desc'), 300, 15);
+        for (let k = 0; k < Math.min(2, lines.length); k++) D.text(ctx, lines[k], 172, y + 4 + k * 21, { size: 15, color: '#e6ecff' });
       }
-      D.text(ctx, '出擊中的敵機分數 ×2！', W / 2, 840, { size: 16, align: 'center', color: '#ffe27a' });
+      D.text(ctx, L('enemy.x2'), W / 2, 790, { size: 17, align: 'center', color: '#ffe27a', weight: '900', maxW: 420 });
+    }
+
+    // ---- 設定：由左至右「語言」「了解歷史」「CREDIT」三個頁籤（預設停在「語言」）----
+    drawSettings(ctx, t) {
+      this.panel(ctx, L('settings.title'));
+      this.tabs(ctx, this.tabLabels(), this.tab, i => this.tabRect(i, 3), 15);
+      if (this.tab === SET_TAB.LANG) this.drawLanguage(ctx, t);
+      else if (this.tab === SET_TAB.HISTORY) this.drawAbout(ctx);
+      else this.drawCredit(ctx);
+      this.footer(ctx, t, this.tab === SET_TAB.LANG ? 'nav.keys.lang' : this.tab === SET_TAB.HISTORY ? 'nav.keys.history' : 'nav.keys');
+    }
+
+    drawCredit(ctx) {
+      const rows = [['credit.planning', 'Arc Wang'], ['credit.programming', 'AI'], ['credit.art', 'AI'], ['credit.music', 'AI']];
+      for (let i = 0; i < rows.length; i++) {
+        const y = 300 + i * 62;
+        ctx.fillStyle = 'rgba(255,255,255,0.07)';
+        D.roundRect(ctx, 70, y - 26, 400, 52, 14); ctx.fill();
+        D.text(ctx, L(rows[i][0]), 94, y, { size: 22, color: '#ffd166', weight: '900', maxW: 130 });
+        D.text(ctx, rows[i][1], 250, y, { size: 24, color: '#fff', weight: '900', family: D.NUM, maxW: 200 });
+      }
+      D.text(ctx, L('credit.thanks'), W / 2, 580, { size: 26, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 380 });
+      const names = ['Kelvin Lo', 'Gomoto', 'Bubu Lin', '國見比呂', 'KT Lee'];
+      for (let i = 0; i < names.length; i++) D.text(ctx, names[i], W / 2, 634 + i * 36, { size: 23, align: 'center', color: '#fff', weight: '700', maxW: 300 });
+    }
+
+    drawLanguage(ctx, t) {
+      for (let i = 0; i < LANGS.length; i++) {
+        const y = LANG_ROW.y0 + i * LANG_ROW.gap;
+        D.button(ctx, LANGS[i].label, W / 2, y, LANG_ROW.w, LANG_ROW.h, i === this.langIdx, t);
+        if (LANGS[i].id === BM.I18n.lang) {                       // 目前使用中的語言：右邊打勾
+          ctx.save();
+          ctx.translate(W / 2 + LANG_ROW.w / 2 + 34, y);
+          ctx.beginPath(); ctx.arc(0, 0, 17, 0, M.TAU);
+          ctx.fillStyle = '#3ddc84'; ctx.fill();
+          ctx.lineWidth = 4; ctx.strokeStyle = '#fff'; ctx.lineCap = 'round'; ctx.lineJoin = 'round';
+          ctx.beginPath(); ctx.moveTo(-7, 0); ctx.lineTo(-2, 6); ctx.lineTo(8, -6); ctx.stroke();
+          ctx.restore();
+        }
+      }
+      D.text(ctx, L('lang.hint'), W / 2, 630, { size: 16, align: 'center', color: '#9fb0e8', maxW: 400 });
+    }
+
+    // 關於射擊遊戲：3 個分頁（內文之後補上，目前是「準備中」）
+    drawAbout(ctx) {
+      const labels = [L('about.0'), L('about.1'), L('about.2')];
+      this.tabs(ctx, labels, this.sub, i => this.subRect(i), 14);
+      ctx.fillStyle = 'rgba(255,255,255,0.07)';
+      D.roundRect(ctx, 50, 306, 440, 470, 18); ctx.fill();
+      ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 2; ctx.stroke();
+      D.text(ctx, labels[this.sub], W / 2, 356, { size: 28, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 400 });
+      const bodyKey = 'about.body.' + this.sub;
+      if (!BM.I18n.has(bodyKey)) {                                 // 還沒有內文：顯示「準備中」
+        D.text(ctx, L('about.soon'), W / 2, 540, { size: 22, align: 'center', color: '#8f9cc8', maxW: 360 });
+        return;
+      }
+      let y = 402;                                                 // 有內文：自動斷行顯示（\n 換段）
+      for (const para of L(bodyKey).split('\n')) {
+        for (const line of D.wrap(ctx, para, 396, 17)) { if (y > 760) return; D.text(ctx, line, 70, y, { size: 17, color: '#e6ecff' }); y += 28; }
+        y += 10;
+      }
     }
   }
 

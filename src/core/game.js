@@ -38,7 +38,7 @@
   function step(dt) {
     const I = BM.Input;
     I.update();
-    if (I.pressed.mute) BM.Game.toast(BM.Audio.toggleMute() ? '音效：關' : '音效：開');
+    if (I.pressed.mute) BM.Game.toast(BM.I18n.t(BM.Audio.toggleMute() ? 'toast.sound.off' : 'toast.sound.on'));
     if (I.pressed.fullscreen) {
       if (document.fullscreenElement) document.exitFullscreen();
       else if (document.documentElement.requestFullscreen) document.documentElement.requestFullscreen().catch(() => {});
@@ -97,7 +97,7 @@
     BM.Draw.roundRect(ctx, C.W / 2 - 170, 96, 340, 36, 18);
     ctx.fill();
     ctx.restore();
-    BM.Draw.text(ctx, toastText, C.W / 2, 115, { size: 16, align: 'center', color: '#fff', alpha: a });
+    BM.Draw.text(ctx, toastText, C.W / 2, 115, { size: 16, align: 'center', color: '#fff', alpha: a, maxW: 320 });
   }
 
   BM.Game = {

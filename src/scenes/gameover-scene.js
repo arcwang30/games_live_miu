@@ -2,7 +2,8 @@
 (function (BM) {
   const C = BM.CONFIG, W = C.W, M = BM.M, D = BM.Draw, I = BM.Input;
 
-  const ITEMS = ['再玩一次', '回主選單'];
+  const L = (k, v) => BM.I18n.t(k, v);
+  const ITEMS = ['go.again', 'go.menu'];
   const BTN = { w: 300, h: 56, y0: 770, gap: 76 };
 
   class GameOverScene {
@@ -45,19 +46,19 @@
       ctx.fillRect(0, 0, W, C.H);
 
       D.text(ctx, 'GAME OVER', W / 2, 150, { size: 68, align: 'center', color: '#ff6b8a', stroke: '#3a0d2a', strokeW: 12, weight: '900', family: D.NUM, shadow: 'rgba(255,80,120,0.8)', shadowBlur: 20 });
-      D.text(ctx, '老鼠入侵了…喵嗚', W / 2, 212, { size: 22, align: 'center', color: '#dfe6ff' });
+      D.text(ctx, L('go.sub'), W / 2, 212, { size: 22, align: 'center', color: '#dfe6ff', maxW: 470 });
 
       D.text(ctx, 'YOUR SCORE', W / 2, 272, { size: 18, align: 'center', color: '#ffd166', family: D.NUM, weight: '900', spacing: 2 });
       D.text(ctx, M.pad(this.score, 7), W / 2, 322, { size: 56, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 8, family: D.NUM, weight: '900' });
 
       let msg = '';
-      if (this.rank === 0) msg = '★ 新的最高紀錄！ ★';
-      else if (this.rank > 0 && this.rank < 5) msg = '第 ' + (this.rank + 1) + ' 名！進入排行榜';
-      if (msg) D.text(ctx, msg, W / 2, 372, { size: 24, align: 'center', color: '#ffe27a', stroke: '#3a2a00', strokeW: 5, weight: '900', alpha: 0.75 + 0.25 * Math.sin(t * 6) });
+      if (this.rank === 0) msg = L('go.record');
+      else if (this.rank > 0 && this.rank < 5) msg = L('go.rank', { n: this.rank + 1 });
+      if (msg) D.text(ctx, msg, W / 2, 372, { size: 24, align: 'center', color: '#ffe27a', stroke: '#3a2a00', strokeW: 5, weight: '900', alpha: 0.75 + 0.25 * Math.sin(t * 6), maxW: 470 });
 
       // 前 5 名
       const list = BM.Storage.list().slice(0, 5);
-      D.text(ctx, '— 排行榜 —', W / 2, 425, { size: 20, align: 'center', color: '#bcd0ff', weight: '900' });
+      D.text(ctx, L('go.board'), W / 2, 425, { size: 20, align: 'center', color: '#bcd0ff', weight: '900', maxW: 300 });
       for (let i = 0; i < 5; i++) {
         const y = 470 + i * 46, e = list[i], me = i === this.rank;
         if (me) {
@@ -70,7 +71,7 @@
       }
 
       for (let i = 0; i < ITEMS.length; i++) {
-        D.button(ctx, ITEMS[i], W / 2, this.btnY(i), BTN.w, BTN.h, i === this.idx, t);
+        D.button(ctx, L(ITEMS[i]), W / 2, this.btnY(i), BTN.w, BTN.h, i === this.idx, t);
       }
     }
   }

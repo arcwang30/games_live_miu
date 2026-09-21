@@ -181,8 +181,8 @@
       const s = T.stick;
 
       if (!T.used && !s.active) {                                     // 第一次使用的操作提示
-        D.text(ctx, '按住畫面：戰機在手指上方', HINT.x + 40, HINT.y + RING + 22, { size: 14, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 4, weight: '900', alpha: 0.6 + 0.4 * Math.sin(t * 4) });
-        D.text(ctx, '子彈自動連射', HINT.x + 40, HINT.y + RING + 42, { size: 13, align: 'center', color: '#ffd166', stroke: '#1b1240', strokeW: 4, weight: '900' });
+        D.text(ctx, BM.I18n.t('touch.hint1'), HINT.x + 40, HINT.y + RING + 22, { size: 14, align: 'center', color: '#fff', stroke: '#1b1240', strokeW: 4, weight: '900', alpha: 0.6 + 0.4 * Math.sin(t * 4), maxW: 240 });
+        D.text(ctx, BM.I18n.t('touch.hint2'), HINT.x + 40, HINT.y + RING + 42, { size: 13, align: 'center', color: '#ffd166', stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 240 });
       }
 
       // 暫停按鈕

@@ -1,15 +1,23 @@
 // 常用繪圖小工具（文字、圓角矩形、按鈕）
 (function (BM) {
-  const CJK = '"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC",sans-serif';
+  // 中文字型在前；日文字型排在後面（日文假名 / 日文漢字缺字時會自動使用）
+  const CJK = '"Microsoft JhengHei","PingFang TC","Noto Sans TC","Heiti TC","Yu Gothic UI","Meiryo","Hiragino Kaku Gothic ProN","Noto Sans JP",sans-serif';
   const NUM = '"Courier New",Consolas,"Liberation Mono",monospace';
 
   const Draw = BM.Draw = {
     CJK, NUM,
 
+    // 選項 maxW：文字超過這個寬度時自動縮小字級（多語系文字長度不一，避免超出版面）
     text(ctx, str, x, y, o) {
       o = o || {};
       ctx.save();
-      ctx.font = (o.weight || '700') + ' ' + (o.size || 20) + 'px ' + (o.family || CJK);
+      let size = o.size || 20;
+      const fontOf = s => (o.weight || '700') + ' ' + s + 'px ' + (o.family || CJK);
+      ctx.font = fontOf(size);
+      if (o.maxW) {
+        const w = ctx.measureText(str).width;
+        if (w > o.maxW) { size = Math.max(9, size * o.maxW / w); ctx.font = fontOf(size); }
+      }
       ctx.textAlign = o.align || 'left';
       ctx.textBaseline = o.baseline || 'middle';
       if (o.spacing && 'letterSpacing' in ctx) ctx.letterSpacing = o.spacing + 'px';
@@ -24,6 +32,23 @@
       ctx.fillStyle = o.color || '#fff';
       ctx.fillText(str, x, y);
       ctx.restore();
+    },
+
+    // 依寬度斷行：有空白的（英文）依單字斷，沒有空白的（中日文）逐字斷
+    wrap(ctx, str, maxW, size, weight) {
+      ctx.save();
+      ctx.font = (weight || '700') + ' ' + size + 'px ' + CJK;
+      const spaced = str.indexOf(' ') >= 0;
+      const parts = spaced ? str.split(' ') : Array.from(str), sep = spaced ? ' ' : '';
+      const lines = [];
+      let cur = '';
+      for (const p of parts) {
+        const test = cur ? cur + sep + p : p;
+        if (cur && ctx.measureText(test).width > maxW) { lines.push(cur); cur = p; } else cur = test;
+      }
+      if (cur) lines.push(cur);
+      ctx.restore();
+      return lines;
     },
 
     roundRect(ctx, x, y, w, h, r) {
@@ -59,7 +84,7 @@
       ctx.strokeStyle = selected ? '#fff3d6' : 'rgba(255,255,255,0.25)';
       ctx.stroke();
       Draw.text(ctx, label, 0, 2, {
-        size: 26, align: 'center', color: selected ? '#3a1d0a' : '#dfe6ff', weight: '800'
+        size: 26, align: 'center', color: selected ? '#3a1d0a' : '#dfe6ff', weight: '800', maxW: w - 90
       });
       if (selected) {
         Draw.text(ctx, '▶', -w / 2 + 26, 2, { size: 18, align: 'center', color: '#3a1d0a' });
