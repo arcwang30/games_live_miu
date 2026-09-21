@@ -7,9 +7,39 @@
 //   claw   爪擊（近戰）：欺近玩家、舉爪蓄力（顯示危險扇形）、揮爪；
 //          蓄力～收招期間有護盾，會把玩家子彈反彈回來（此時打不到 BOSS）
 // 血量 66% / 33% 進入第 2 / 3 階段（速度 ×1.12 / ×1.25，發數增加）。
-// 血量歸零 → dying：定格、一臉厭世、碎面罩、嘆氣、講「唉，下班了」，最後才爆炸 → dead。
+// 血量歸零 → dying：定格、一臉厭世、碎面罩、嘆氣、講一句隨機抽的厭世台詞（見 LINES / pickLine，例如「唉，下班了」），最後才爆炸 → dead。
 (function (BM) {
   const C = BM.CONFIG, B = C.BOSS, M = BM.M, D = BM.Draw, W = C.W, H = C.H, PI = Math.PI;
+
+  // ---- 死亡台詞（厭世 / 社畜 + 搞笑 / 另類）：文字放在 i18n（'boss.l.<id>'，中日英各一份，共 55 句），這裡決定「什麼情況抽哪些」----
+  // any 通用；day / dusk / night 依時段；lv1 / lv2 / lv3 依第幾隻 BOSS（lv3 = 第 3 隻起，台詞裡的 {n} 會換成第幾隻）；
+  // flawless 這局一條命都沒丟過；manyDeaths 這局死了 3 次以上；fast 戰鬥很短；slow 戰鬥很久
+  const LINES = {
+    any: ['g01', 'g02', 'g03', 'g04', 'g05', 'g06', 'g07', 'g08', 'g09', 'g10', 'g11', 'g12', 'g13', 'g14', 'g15', 'g16', 'g17', 'g18', 'g19', 'g20', 'g21', 'g22', 'g23', 'g24', 'g25', 'g26'],
+    day: ['day1', 'day2', 'day3'], dusk: ['dusk1', 'dusk2', 'dusk3'], night: ['night1', 'night2', 'night3'],
+    lv1: ['lv1a', 'lv1b', 'lv1c'], lv2: ['lv2a', 'lv2b', 'lv2c'], lv3: ['lv3a', 'lv3b', 'lv3c', 'lv3d'],
+    flawless: ['flaw1', 'flaw2', 'flaw3'], manyDeaths: ['many1', 'many2', 'many3'], fast: ['fast1', 'fast2'], slow: ['slow1', 'slow2']
+  };
+  const SPECIFIC_WEIGHT = 4;             // 符合情境的台詞，被抽到的機會是通用台詞的 4 倍（一般情況下大約一半的時候會是「針對你這一場」的吐槽）
+  const FAST_UNDER = 50, SLOW_OVER = 110; // 戰鬥秒數（含登場約 2 秒）：低於 / 高於這個算「很快 / 很久」
+  const recent = [];                     // 最近抽過的台詞：不會連續重複
+
+  // ctx = { phase: 'day'|'dusk'|'night', level, deaths, time }；回傳台詞 id
+  function pickLine(ctx) {
+    const groups = ['any', ctx.phase, ctx.level >= 3 ? 'lv3' : ctx.level === 2 ? 'lv2' : 'lv1'];
+    if (ctx.deaths === 0) groups.push('flawless');
+    if (ctx.deaths >= 3) groups.push('manyDeaths');
+    if (ctx.time < FAST_UNDER) groups.push('fast');
+    if (ctx.time > SLOW_OVER) groups.push('slow');
+    let pool = [];
+    for (const g of groups) for (const id of (LINES[g] || [])) if (!recent.includes(id)) pool.push({ id, w: g === 'any' ? 1 : SPECIFIC_WEIGHT });
+    if (!pool.length) pool = LINES.any.map(id => ({ id, w: 1 }));
+    let r = Math.random() * pool.reduce((s, p) => s + p.w, 0), pick = pool[pool.length - 1];
+    for (const p of pool) { r -= p.w; if (r <= 0) { pick = p; break; } }
+    recent.push(pick.id);
+    if (recent.length > 8) recent.shift();
+    return pick.id;
+  }
 
   class Boss {
     constructor(level) {
@@ -60,6 +90,7 @@
       this.state = 'dying';
       this.t = 0;
       this.a = { ex: 0, puff: 0 };
+      this.lineId = pickLine({ phase: BM.Background.phaseFor(w.wave), level: this.level, deaths: w.deaths || 0, time: this.time });   // 死亡台詞：依時段 / 第幾隻 / 這局表現隨機抽
       this.face = 'dead';
       this.guarding = false;
       w.onBossDying();
@@ -454,12 +485,17 @@
     }
 
     // 死亡時的對話框
+    // 先出現「……」（停頓鋪陳），1.1 秒後換成這次抽到的台詞；台詞太長就自動斷成兩行（英文依單字、中日文逐字）
     drawBubble(ctx) {
-      const text = BM.I18n.t(this.t < 1.1 ? 'boss.bubble1' : 'boss.bubble2');
+      const first = this.t < 1.1;
+      const text = first ? BM.I18n.t('boss.bubble1') : BM.I18n.t(this.lineId ? 'boss.l.' + this.lineId : 'boss.bubble2', { n: this.level });
       ctx.save(); ctx.font = '900 24px ' + D.CJK;
-      const bw = Math.min(330, Math.max(84, ctx.measureText(text).width + 40)), bh = 46;      // 對話框寬度依文字長度（多語系）
+      const oneW = ctx.measureText(text).width;
       ctx.restore();
-      const bx = M.clamp(this.x + 100, bw / 2 + 8, W - bw / 2 - 8), by = this.y - 108;
+      const wrap = oneW > 290;
+      const lines = wrap ? D.wrap(ctx, text, 290, 22, '900').slice(0, 2) : [text];
+      const bw = wrap ? 330 : Math.min(330, Math.max(84, oneW + 40)), bh = wrap ? 76 : 46;      // 對話框寬度依文字長度（多語系）
+      const bx = M.clamp(this.x + 100, bw / 2 + 8, W - bw / 2 - 8), by = this.y - 108 - (bh - 46) / 2;   // 底邊固定，兩行時往上長高
       ctx.save();
       ctx.fillStyle = '#fff'; ctx.strokeStyle = '#2a2438'; ctx.lineWidth = 3;
       D.roundRect(ctx, bx - bw / 2, by - bh / 2, bw, bh, 16);
@@ -468,9 +504,12 @@
       ctx.moveTo(bx - bw / 2 + 22, by + bh / 2 - 1); ctx.lineTo(this.x + 58, this.y - 70); ctx.lineTo(bx - bw / 2 + 46, by + bh / 2 - 1);
       ctx.fillStyle = '#fff'; ctx.fill();
       ctx.restore();
-      D.text(ctx, text, bx, by + 2, { size: 24, align: 'center', color: '#2a2438', weight: '900', maxW: bw - 24 });
+      if (wrap) lines.forEach((ln, i) => D.text(ctx, ln, bx, by - 15 + i * 29 + 2, { size: 22, align: 'center', color: '#2a2438', weight: '900', maxW: bw - 24 }));
+      else D.text(ctx, text, bx, by + 2, { size: 24, align: 'center', color: '#2a2438', weight: '900', maxW: bw - 24 });
     }
   }
 
+  Boss.LINES = LINES;
+  Boss.pickLine = pickLine;
   BM.Boss = Boss;
 })(window.BM = window.BM || {});

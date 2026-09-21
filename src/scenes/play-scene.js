@@ -24,6 +24,7 @@
       this.reserve = C.START_LIVES;
       this.extraN = 1;                                     // 下一台加命是第幾台
       this.nextExtra = this.extraAt(1);                    // 下一台加命需要的分數
+      this.deaths = 0;                                     // 這一局玩家被打死幾次（BOSS 死亡台詞會參考）
       this.golds = [];                                     // 場上的金必鼠（最多 1 隻）
       this.goldAt = null;                                  // 這一波金必鼠要在第幾秒出現（null = 這波不出現）
       this.goldMiss = 0;                                   // 連續幾個一般波沒有安排金必鼠（出現機率的保底）
@@ -391,6 +392,7 @@
     killPlayer() {
       const p = this.player;
       p.alive = false;
+      this.deaths++;
       BM.Particles.explode(p.x, p.y, '#ffa14a', 26);
       BM.Particles.explode(p.x, p.y, '#ffffff', 12);
       this.shake = 0.5;
