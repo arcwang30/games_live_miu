@@ -330,6 +330,125 @@
       g.beginPath(); g.moveTo(-17, -36); g.lineTo(-2, -40); g.stroke();
     }
   }
+  // ---------- BOSS：桐生爹鼠（白西裝流氓、怒髮衝冠、猛男體格）----------
+  // 跟流氓大老鼠（獨眼太空裝）刻意做出區別：沒有頭盔面罩、沒有噴射背包，改成立起來的刺頭髮型 + 開襟西裝露刺青。
+  // face: 'normal' 得意冷笑 / 'angry' 怒吼攻擊中 / 'dead' 被打趴（暈眩）
+  function drawBoss2(g, face) {
+    const OUT = '#241c1a', FUR = '#8a6f5c', SUIT = '#f7f5ef', SHIRT = '#7a1f24', HAIR = '#141018', PAW = '#caa588';
+    const RR = BM.Draw.roundRect;
+    const spike = (bx, by, tx, ty, w) => {                          // 一根立起來的刺頭
+      const dx = tx - bx, dy = ty - by, len = Math.hypot(dx, dy) || 1, nx = -dy / len * w, ny = dx / len * w;
+      poly(g, [[bx - nx, by - ny], [bx + nx, by + ny], [tx, ty]], HAIR, OUT, 1.4);
+    };
+
+    g.beginPath(); g.moveTo(42, 62); g.bezierCurveTo(72, 70, 78, 44, 62, 34);   // 小尾巴（維持鼠類身分，比流氓鼠低調）
+    g.lineWidth = 6; g.strokeStyle = OUT; g.stroke();
+    g.lineWidth = 3; g.strokeStyle = PAW; g.stroke();
+
+    for (const s of [-1, 1]) {                                       // 白皮鞋
+      ell(g, s * 26, 92, 22, 15, SUIT, OUT, 2.5);
+      ell(g, s * 26, 101, 22, 6, '#2a2020');
+      line(g, s * 26 - 10, 88, s * 26 + 10, 88, '#d8d4c8', 2);
+    }
+    for (const s of [-1, 1]) {                                       // 白西裝褲
+      poly(g, [[s * 8, 56], [s * 34, 60], [s * 30, 88], [s * 12, 88]], SUIT, OUT, 2.5);
+      line(g, s * 20, 62, s * 24, 86, '#d8d4c8', 1.4);
+    }
+    RR(g, -22, 62, 44, 12, 5); g.fillStyle = '#151018'; g.fill(); g.lineWidth = 1.8; g.strokeStyle = OUT; g.stroke();   // 黑皮帶
+    RR(g, -7, 63, 14, 10, 3); g.fillStyle = '#ffd23f'; g.fill(); g.lineWidth = 1.6; g.strokeStyle = OUT; g.stroke();    // 金色扣環
+
+    ell(g, 0, 38, 58, 40, SUIT, OUT, 3);                             // 白西裝外套（猛男胸膛，比流氓鼠寬）
+    poly(g, [[-20, 6], [20, 6], [0, 54]], SHIRT, OUT, 2);             // 暗紅襯衫（開襟露胸）
+    poly(g, [[-20, 6], [-2, 10], [-16, 50], [-30, 20]], SUIT, OUT, 2); // 左西裝領
+    poly(g, [[20, 6], [2, 10], [16, 50], [30, 20]], SUIT, OUT, 2);     // 右西裝領
+    line(g, -14, 30, -4, 22, '#4a1216', 2.2); line(g, -4, 22, 6, 32, '#4a1216', 2.2); line(g, 6, 32, 14, 24, '#4a1216', 2.2);  // 胸口刺青紋
+    ell(g, 0, 18, 3, 3, '#ffd23f'); line(g, -16, 8, 16, 8, '#ffd23f', 1.6);   // 金項鍊
+
+    for (const s of [-1, 1]) {                                       // 肩膀、手臂、拳頭
+      ell(g, s * 60, 14, 20, 18, SUIT, OUT, 2.8);
+      ell(g, s * 70, 42, 16, 25, SUIT, OUT, 2.5);
+      ell(g, s * 76, 70, 17, 16, PAW, OUT, 2.5);
+      for (let k = -1; k <= 1; k++) line(g, s * 76 + k * 6, 62, s * 76 + k * 6, 68, OUT, 1.8);   // 指節
+    }
+
+    g.beginPath(); g.ellipse(0, -2, 40, 12, 0, 0, TAU);               // 西裝領口
+    g.lineWidth = 8; g.strokeStyle = SUIT; g.stroke();
+    g.lineWidth = 1.6; g.strokeStyle = OUT; g.stroke();
+
+    for (const s of [-1, 1]) {                                       // 耳朵（一邊掛金耳環）
+      ell(g, s * 44, -72, 19, 19, FUR, OUT, 2.5);
+      ell(g, s * 44, -72, 10, 10, '#caa588');
+    }
+    ell(g, -44, -58, 3, 3, '#ffd23f', OUT, 1);
+    ell(g, 0, -34, 44, 40, FUR, OUT, 3);                              // 頭
+    ell(g, 0, -16, 24, 16, '#dcd0c2', OUT, 2);                        // 嘴套
+    ell(g, 0, -23, 6.5, 5, '#4a2018', OUT, 1.5);                      // 鼻子
+    for (const s of [-1, 1]) {                                        // 鬍鬚
+      line(g, s * 15, -16, s * 46, -22, 'rgba(36,28,26,0.8)', 1.4);
+      line(g, s * 15, -12, s * 46, -9, 'rgba(36,28,26,0.8)', 1.4);
+    }
+
+    // ---- 怒髮衝冠：一圈立起來的龐克刺頭，這是跟流氓大老鼠最明顯的區別 ----
+    const SPIKES = [
+      [-40, -46, -66, -60, 8], [-30, -62, -48, -92, 8], [-16, -72, -22, -110, 7],
+      [0, -76, 0, -118, 8], [16, -72, 24, -110, 7], [30, -62, 50, -92, 8],
+      [40, -46, 66, -58, 8], [-8, -74, -14, -104, 6], [8, -74, 16, -104, 6]
+    ];
+    for (const s of SPIKES) spike(s[0], s[1], s[2], s[3], s[4]);
+    line(g, -34, -30, -14, -44, '#5a3a2c', 2.4);                      // 臉頰傷疤
+
+    if (face === 'dead') {
+      // 被打趴：暈眩的螺旋眼、扁嘴、冒汗
+      for (const s of [-1, 1]) {
+        ell(g, s * 20, -42, 10, 10, '#fff', OUT, 1.8);
+        g.save(); g.translate(s * 20, -42); g.rotate(s * 0.4);
+        g.beginPath();
+        for (let a = 0; a < 10; a++) { const r = a * 0.7, th = a * 1.3; g.lineTo(Math.cos(th) * r, Math.sin(th) * r); }
+        g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+        g.restore();
+      }
+      line(g, 6, -56, 34, -54, OUT, 4.4); line(g, -34, -56, -6, -58, OUT, 4.4);   // 眉毛垂下
+      line(g, -13, -6, 13, -7, OUT, 3);                                          // 扁嘴
+      line(g, -13, -6, -17, -2, OUT, 2.4); line(g, 13, -7, 17, -3, OUT, 2.4);
+      g.beginPath(); g.moveTo(40, -66);                                          // 冷汗
+      g.quadraticCurveTo(45, -56, 40, -51); g.quadraticCurveTo(35, -56, 40, -66);
+      g.fillStyle = '#8fd8ff'; g.fill(); g.lineWidth = 1.3; g.strokeStyle = '#3a7fa8'; g.stroke();
+    } else {
+      const angry = face === 'angry';
+      for (const s of [-1, 1]) {
+        ell(g, s * 20, -42, angry ? 11 : 9, angry ? 11 : 7, '#fff', OUT, 1.8);
+        ell(g, s * 20, -41, angry ? 5.6 : 4.2, angry ? 5.6 : 4.2, '#241c1a');
+        ell(g, s * 18.5, -44.5, 1.4, 1.4, '#fff');
+      }
+      if (angry) { line(g, 5, -55, 35, -66, OUT, 5.4); line(g, -35, -66, -5, -55, OUT, 5.4); }        // 怒眉
+      else { line(g, 6, -60, 34, -50, OUT, 5); line(g, -34, -48, -8, -58, OUT, 4.6); }                 // 得意的斜眉
+      if (angry) {                                                     // 怒吼
+        ell(g, 0, -6, 18, 11, '#3a1020', OUT, 2);
+        poly(g, [[-11, -14], [-5, -14], [-8, -7]], '#fff');
+        poly(g, [[11, -14], [5, -14], [8, -7]], '#fff');
+        ell(g, 0, -2, 9, 4.6, '#ff6b86');
+      } else {                                                         // 得意冷笑 + 金牙
+        g.beginPath(); g.moveTo(-16, -8); g.quadraticCurveTo(0, 2, 18, -12);
+        g.lineWidth = 3.2; g.strokeStyle = OUT; g.stroke();
+        RR(g, -6, -10, 7, 10, 2); g.fillStyle = '#fff'; g.fill(); g.lineWidth = 1.3; g.strokeStyle = OUT; g.stroke();
+        RR(g, 2, -11, 7, 10, 2); g.fillStyle = '#ffd23f'; g.fill(); g.stroke();
+      }
+    }
+  }
+
+  function drawKnife(g) {                // 敵方子彈：小刀光波（斬擊 / 三角錐攻擊共用）；尖端朝 +x，配合 EnemyBullet 用飛行角度當 rot
+    g.save();
+    g.shadowColor = 'rgba(140,220,255,0.9)'; g.shadowBlur = 6;
+    const gr = g.createLinearGradient(-9, 0, 10, 0);
+    gr.addColorStop(0, '#eaf7ff'); gr.addColorStop(1, '#7fd0ff');
+    poly(g, [[-9, 0], [3, -4.5], [10, 0], [3, 4.5]], gr, '#1b4d66', 1.8);    // 刀刃（實心、深藍色外框，發光）
+    g.shadowBlur = 0;
+    poly(g, [[-14, -2.6], [-9, -1.8], [-9, 1.8], [-14, 2.6]], '#6b5330', '#1b1410', 1.4);  // 刀柄
+    g.strokeStyle = 'rgba(255,255,255,0.9)'; g.lineWidth = 1.3;
+    g.beginPath(); g.moveTo(-6, 0); g.lineTo(7, 0); g.stroke();
+    g.restore();
+  }
+
   function drawOrb(g) {                  // 敵方子彈：橘紅光球
     const gr = g.createRadialGradient(0, 0, 0, 0, 0, 9);
     gr.addColorStop(0, '#ffffff');
@@ -366,9 +485,12 @@
       make('orb', 22, 22, drawOrb);
       make('poop', 30, 34, drawPoop);
       make('cheese', 34, 30, drawCheese);
+      make('knife', 22, 22, drawKnife);
       for (const f of ['normal', 'angry', 'dead']) {
         make('boss_' + f, 250, 250, g => drawBoss(g, f));
         makeFlash('boss_' + f);
+        make('kiryu_' + f, 250, 250, g => drawBoss2(g, f));
+        makeFlash('kiryu_' + f);
       }
       for (let i = 0; i < 3; i++) {
         make('cloud' + i, 150, 70, g => drawCloud(g, i));       // 白色（白天 / 主選單）

@@ -153,10 +153,11 @@
 
     startBossWave() {
       const level = this.wave / C.BOSS.EVERY;
+      const kind = level % 2 === 0 ? 'kiryu' : 'gangster';   // 兩隻 BOSS 交替出現：流氓大老鼠（第 5、15、25…波）／桐生爹鼠（第 10、20、30…波）
       this.enemies = [];
-      this.boss = new BM.Boss(level);
+      this.boss = new BM.Boss(level, kind);
       this.state = 'boss';
-      this.banner = { text: 'WARNING!', sub: L('banner.bosswarn'), t: 0, dur: 2.6, warn: true };
+      this.banner = { text: 'WARNING!', sub: L('banner.bosswarn', { name: L(this.boss.nameKey) }), t: 0, dur: 2.6, warn: true };
       BM.Audio.playMusic('boss');
       BM.Audio.sfx('warning');
     }
@@ -359,7 +360,7 @@
       // BOSS 身體衝撞 / 爪擊 → 玩家
       if (bo && bo.lethal) {
         const dx = bo.x - p.x, dy = bo.cy - p.y, r = bo.radius + p.radius - 4;
-        if (dx * dx + dy * dy < r * r || bo.clawHit(p)) { this.killPlayer(); return; }
+        if (dx * dx + dy * dy < r * r || bo.meleeHit(p)) { this.killPlayer(); return; }
       }
 
       // 敵方子彈 → 玩家

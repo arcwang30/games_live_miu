@@ -31,7 +31,7 @@
       const k = Math.max(0, boss.hp / boss.maxHp) * boss.barK;
       const ghost = Math.max(0, boss.ghost / boss.maxHp) * boss.barK;
 
-      D.text(ctx, BM.I18n.t('boss.name'), x, y - 12, { size: 16, color: '#ffd166', stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 250 });
+      D.text(ctx, BM.I18n.t(boss.nameKey), x, y - 12, { size: 16, color: '#ffd166', stroke: '#1b1240', strokeW: 4, weight: '900', maxW: 250 });
       D.text(ctx, 'BOSS LV.' + boss.level, x + w, y - 12, { size: 14, align: 'right', color: '#ff9ecb', stroke: '#1b1240', strokeW: 4, family: D.NUM, weight: '900' });
 
       ctx.save();

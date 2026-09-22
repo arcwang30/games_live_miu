@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.22e',
+    VERSION: '2026.09.22g',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -26,7 +26,8 @@
       maxBullets: 20,
       radius: 8,
       respawnDelay: 1.7,
-      invuln: 2.4
+      invuln: 2.4,
+      slowMul: 0.45      // 被桐生爹鼠的「極！」擊中時的移動速度倍率（緩速）
     },
 
     // 敵機待機陣形：15 欄，位於畫面中間 1/3（y 320~640）。列數隨波數增加：
@@ -82,6 +83,17 @@
       hitScore: 10,           // 每打中一發的分數
       killBonus: 10000,       // 擊破獎勵 ×BOSS 等級
       deathTime: 4.2          // 厭世死亡演出長度（秒）
+    },
+
+    // BOSS「桐生爹鼠」：硬派西裝流氓，和「流氓大老鼠」交替出現（EVERY 的偶數次，也就是第 10、20、30…波）。
+    // 血量 / 動作與子彈速度倍率沿用上面 BOSS 的等級曲線；這裡只放這隻專屬的攻擊數值。
+    BOSS2: {
+      radius: 64, homeY: 250,           // 跟流氓大老鼠同尺寸、同待機高度
+      idle: 1.3,
+      knifeSpeed: 620,                  // 斬擊：刀劍光波子彈速度
+      punchRange: 96, punchGap: 0.11,   // 拳頭攻擊：判定半徑、兩拳之間的間隔（秒，未乘等級倍率前）
+      coneSpeed: 460, coneShardSpeed: 300, coneSplitDelay: 0.42, coneShards: 6,  // 三角錐攻擊：小刀速度／碎片速度／飛行多久後炸開／碎片數
+      shout: { charge: 0.5, hold: 1.1, maxRadius: 720, slowTime: 2.4 }          // 「極！」：蓄力／擴散到最大要多久／最大半徑（大到能罩住整個玩家活動範圍）／緩速秒數
     }
   };
 })(window.BM = window.BM || {});

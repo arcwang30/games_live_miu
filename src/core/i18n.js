@@ -139,8 +139,9 @@
       'pause.title': '暫停', 'pause.resume': '繼續遊戲', 'pause.menu': '回主選單',
       'pause.hint': 'Esc / P / Start 繼續', 'pause.hint.touch': '點一下選項',
       // 遊戲中
-      'banner.bosswarn': 'BOSS  流氓大老鼠 來襲', 'banner.bonus': '通關獎勵 +{n}', 'banner.bossdown': '擊破 BOSS +{n}',
+      'banner.bosswarn': 'BOSS  {name} 來襲', 'banner.bonus': '通關獎勵 +{n}', 'banner.bossdown': '擊破 BOSS +{n}',
       'boss.name': '流氓大老鼠', 'boss.bubble1': '……', 'boss.bubble2': '唉，下班了',
+      'boss2.name': '桐生爹鼠', 'boss2.bubble2': '哼…算你有種',
       // BOSS 死亡台詞（隨機抽一句，見 boss.js 的 LINES）。{n} = 這是第幾隻 BOSS。中文不要用空白（斷行會依空白分字）
       'boss.l.g01': '唉，下班了', 'boss.l.g02': '這個月的績效…完蛋了', 'boss.l.g03': '我只是來打工的啊', 'boss.l.g04': '早知道就請假了',
       'boss.l.g05': '又要寫報告了…', 'boss.l.g06': '起司…還沒吃完…', 'boss.l.g07': '好想回家躺著', 'boss.l.g08': '我的年終獎金…',
@@ -159,6 +160,17 @@
       'boss.l.many1': '你也死了好幾次…不容易', 'boss.l.many2': '兩敗俱傷…都回家吧', 'boss.l.many3': '陣亡那麼多次還能贏…',
       'boss.l.fast1': '這麼快？我才剛暖身', 'boss.l.fast2': '才幾分鐘，我的午茶呢',
       'boss.l.slow1': '打這麼久，加班費你出？', 'boss.l.slow2': '這場會議，開太久了…',
+      // 桐生爹鼠死亡台詞（硬派流氓大哥風格，中文不要用空白，斷行會依空白分字）
+      'boss2.l.k01': '這拳頭…還是不夠燙嗎', 'boss2.l.k02': '算你有種，記住這股熱血', 'boss2.l.k03': '哼，這身西裝…弄髒了',
+      'boss2.l.k04': '輸了就輸了，男子漢不狡辯', 'boss2.l.k05': '下次…換我請你吃拳頭', 'boss2.l.k06': '這條路，我走得無怨無悔',
+      'boss2.l.k07': '極…也有失手的時候', 'boss2.l.k08': '別得意，這才第一回合', 'boss2.l.k09': '我桐生的名號，你記住了',
+      'boss2.l.k10': '這一拳，算我欠你的', 'boss2.l.k11': '喵的…被一隻貓打敗', 'boss2.l.k12': '痛快，好久沒這麼痛快了',
+      'boss2.l.klv1a': '哦？第一次見面就這麼囂張', 'boss2.l.klv1b': '新來的貓，膽子不小',
+      'boss2.l.klv2a': '又是你…上次的帳還沒算完', 'boss2.l.klv2b': '第二次了，這次我認真了',
+      'boss2.l.klv3a': '第{n}次了…你到底練了多久', 'boss2.l.klv3b': '第{n}回合，我桐生家的面子都被你打光了',
+      'boss2.l.kflaw1': '一條命都沒丟？你不是普通貓', 'boss2.l.kflaw2': '這麼硬…改天來我這裡上班',
+      'boss2.l.kmany1': '你也摔了好幾次…算扯平了', 'boss2.l.kmany2': '彼此彼此，都掛了彩',
+      'boss2.l.kfast1': '這麼快就分出勝負…爽快', 'boss2.l.kslow1': '打這麼久，我這身西裝都濕透了',
       'touch.hint1': '按住畫面：戰機在手指上方', 'touch.hint2': '子彈自動連射',
       'toast.sound.on': '音效：開', 'toast.sound.off': '音效：關'
     },
@@ -285,8 +297,9 @@
       'ranking.sync.loading': '同期中…', 'ranking.sync.ok': '世界ランキング', 'ranking.sync.offline': 'オフライン・本体の記録を表示',
       'pause.title': 'ポーズ', 'pause.resume': 'ゲームに戻る', 'pause.menu': 'メインメニューへ',
       'pause.hint': 'Esc / P / Start で再開', 'pause.hint.touch': 'タップして選択',
-      'banner.bosswarn': 'BOSS  ギャング大ネズミ 襲来', 'banner.bonus': 'クリアボーナス +{n}', 'banner.bossdown': 'ボス撃破 +{n}',
+      'banner.bosswarn': 'BOSS  {name} 襲来', 'banner.bonus': 'クリアボーナス +{n}', 'banner.bossdown': 'ボス撃破 +{n}',
       'boss.name': 'ギャング大ネズミ', 'boss.bubble1': '……', 'boss.bubble2': 'はぁ…定時であがります',
+      'boss2.name': 'キリュウ親父ネズミ', 'boss2.bubble2': 'ふん…やるじゃねえか',
       // BOSS 死亡台詞（日文）
       'boss.l.g01': 'はぁ…お先に失礼します', 'boss.l.g02': '今月の評価が…終わった', 'boss.l.g03': 'バイトなだけなのに…', 'boss.l.g04': '有給取っとけばよかった',
       'boss.l.g05': 'また始末書か…', 'boss.l.g06': 'チーズ…まだ食べてない…', 'boss.l.g07': '家に帰って寝たい…', 'boss.l.g08': '私のボーナスが…',
@@ -305,6 +318,17 @@
       'boss.l.many1': '君も何度もやられたな…', 'boss.l.many2': '相打ちか…もう帰ろう', 'boss.l.many3': 'あれだけやられて勝つのか…',
       'boss.l.fast1': '早っ！まだ準備運動中…', 'boss.l.fast2': 'まだティータイム前なのに…',
       'boss.l.slow1': '長引いたな、残業代は？', 'boss.l.slow2': 'この会議、長すぎ…',
+      // 桐生爹鼠死亡台詞（日文、ヤクザの親分風）
+      'boss2.l.k01': 'この拳が…まだ足りないってか', 'boss2.l.k02': 'なかなかやるな、その熱さ覚えとけ', 'boss2.l.k03': 'ふん、スーツが汚れちまった',
+      'boss2.l.k04': '負けは負けだ、男は言い訳しない', 'boss2.l.k05': '次は…お前に拳をご馳走してやる', 'boss2.l.k06': 'この道を、俺は悔いなく歩いてきた',
+      'boss2.l.k07': '「極」にも…しくじる時はある', 'boss2.l.k08': '調子に乗るな、まだ一回戦だ', 'boss2.l.k09': '俺の名前、しっかり覚えとけ',
+      'boss2.l.k10': 'この一発は…貸しにしといてやる', 'boss2.l.k11': 'くそ…猫にやられるとはな', 'boss2.l.k12': '爽快だ…こんなに痛快なのは久しぶりだ',
+      'boss2.l.klv1a': 'ほう？初対面からずいぶん威勢がいいな', 'boss2.l.klv1b': '新入りの猫にしちゃ、いい度胸だ',
+      'boss2.l.klv2a': 'またお前か…この前の借りがまだだぞ', 'boss2.l.klv2b': '二度目か、今度は本気でいくぞ',
+      'boss2.l.klv3a': '{n}回目か…どれだけ鍛えてきたんだ', 'boss2.l.klv3b': '{n}回戦目、桐生の名に泥を塗られたな',
+      'boss2.l.kflaw1': '一度もやられなかったのか？ただの猫じゃないな', 'boss2.l.kflaw2': 'そんなに強いなら…うちで働かないか',
+      'boss2.l.kmany1': 'お前も何度も倒れてたな…お互い様だ', 'boss2.l.kmany2': '傷だらけ同士、これで手打ちだ',
+      'boss2.l.kfast1': 'こんなに早く決着とはな…爽快だぜ', 'boss2.l.kslow1': '長い戦いだったな…スーツが汗でびしょ濡れだ',
       'touch.hint1': '画面を押す：機体は指の上', 'touch.hint2': '弾は自動連射',
       'toast.sound.on': 'サウンド：ON', 'toast.sound.off': 'サウンド：OFF'
     },
@@ -431,8 +455,9 @@
       'ranking.sync.loading': 'Syncing…', 'ranking.sync.ok': 'Global ranking', 'ranking.sync.offline': 'Offline – showing local records',
       'pause.title': 'PAUSE', 'pause.resume': 'Resume', 'pause.menu': 'Main menu',
       'pause.hint': 'Esc / P / Start: resume', 'pause.hint.touch': 'Tap an option',
-      'banner.bosswarn': 'BOSS  Gangster Rat incoming', 'banner.bonus': 'Clear bonus +{n}', 'banner.bossdown': 'Boss defeated +{n}',
+      'banner.bosswarn': 'BOSS  {name} incoming', 'banner.bonus': 'Clear bonus +{n}', 'banner.bossdown': 'Boss defeated +{n}',
       'boss.name': 'Gangster Rat', 'boss.bubble1': '……', 'boss.bubble2': 'Sigh… clocking out.',
+      'boss2.name': 'Don Kiryu Rat', 'boss2.bubble2': 'Heh… you\'ve got guts.',
       // BOSS death lines (English)
       'boss.l.g01': 'Sigh… clocking out.', 'boss.l.g02': 'My performance review… I\'m done for.', 'boss.l.g03': 'I\'m just a part-timer here!', 'boss.l.g04': 'Should\'ve taken a sick day.',
       'boss.l.g05': 'Now I have to write a report…', 'boss.l.g06': 'The cheese… I hadn\'t finished…', 'boss.l.g07': 'I just want to go home and lie down.', 'boss.l.g08': 'My year-end bonus…',
@@ -451,6 +476,17 @@
       'boss.l.many1': 'You died a few times too… rough day.', 'boss.l.many2': 'We both took a beating… let\'s go home.', 'boss.l.many3': 'You died that much and still won…',
       'boss.l.fast1': 'Already?! I was still warming up.', 'boss.l.fast2': 'It just started, and where\'s my tea break?',
       'boss.l.slow1': 'This took forever. You paying overtime?', 'boss.l.slow2': 'This meeting ran way too long…',
+      // Kiryu Daddy Rat death lines (English, tough-guy yakuza boss)
+      'boss2.l.k01': 'This fist... still not hot enough for you?', 'boss2.l.k02': 'Not bad. Remember this fire.', 'boss2.l.k03': 'Tch... my suit\'s ruined.',
+      'boss2.l.k04': 'A loss is a loss. A real man doesn\'t make excuses.', 'boss2.l.k05': 'Next time... I\'ll treat you to a real beating.', 'boss2.l.k06': 'This road, I\'ve walked it without regret.',
+      'boss2.l.k07': 'Even "Extreme" stumbles sometimes.', 'boss2.l.k08': 'Don\'t get cocky. This was only round one.', 'boss2.l.k09': 'Remember my name.',
+      'boss2.l.k10': 'This one\'s on me. I owe you.', 'boss2.l.k11': 'Damn... beaten by a cat.', 'boss2.l.k12': 'That felt good. Been a while since a fight felt this good.',
+      'boss2.l.klv1a': 'Oh? Pretty bold for a first meeting.', 'boss2.l.klv1b': 'Not bad guts, for a rookie cat.',
+      'boss2.l.klv2a': 'You again... you still owe me from last time.', 'boss2.l.klv2b': 'Second time, huh. I\'m going all in now.',
+      'boss2.l.klv3a': 'Round {n}... how long have you been training?', 'boss2.l.klv3b': 'Round {n}. You\'ve dragged my name through the mud.',
+      'boss2.l.kflaw1': 'Not a single life lost? You\'re no ordinary cat.', 'boss2.l.kflaw2': 'That tough? Come work for me sometime.',
+      'boss2.l.kmany1': 'You went down a few times too... we\'re even.', 'boss2.l.kmany2': 'Both of us covered in bruises. Truce.',
+      'boss2.l.kfast1': 'Over that fast? Now that\'s satisfying.', 'boss2.l.kslow1': 'Long fight... my suit\'s soaked through.',
       'touch.hint1': 'Hold screen: ship above finger', 'touch.hint2': 'Auto-fire',
       'toast.sound.on': 'Sound: ON', 'toast.sound.off': 'Sound: OFF'
     }

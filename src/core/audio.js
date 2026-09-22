@@ -164,7 +164,14 @@
     bossHit()   { tone({ type: 'sine', f: 200, f2: 90, d: 0.06, v: 0.1 }); },
     roar()      { noise({ d: 0.6, v: 0.2, f: 900, f2: 150 }); tone({ type: 'sawtooth', f: 140, f2: 60, d: 0.6, v: 0.14 }); },
     sigh()      { [392, 370, 349, 311].forEach((f, i) => tone({ type: 'triangle', f, f2: f * 0.93, d: 0.42, v: 0.16, delay: i * 0.38 })); },   // 「哇～哇～哇～」失落音
-    bossBoom()  { noise({ d: 0.95, v: 0.32, f: 2600, f2: 80 }); tone({ type: 'sawtooth', f: 260, f2: 30, d: 1.0, v: 0.14 }); }
+    bossBoom()  { noise({ d: 0.95, v: 0.32, f: 2600, f2: 80 }); tone({ type: 'sawtooth', f: 260, f2: 30, d: 1.0, v: 0.14 }); },
+
+    // ---- BOSS：桐生爹鼠 ----
+    knife()     { noise({ d: 0.14, v: 0.1, f: 7000, f2: 2000 }); tone({ type: 'triangle', f: 1800, f2: 2600, d: 0.08, v: 0.05 }); },   // 拔刀 / 揮刀
+    shard()     { for (let i = 0; i < 5; i++) tone({ type: 'sine', f: 2200 + Math.random() * 1400, d: 0.07, v: 0.05, delay: i * 0.02 }); },   // 小刀炸開分散
+    punch()     { noise({ d: 0.06, v: 0.15, f: 500, f2: 90 }); tone({ type: 'square', f: 130, f2: 60, d: 0.05, v: 0.1 }); },   // 一拳
+    shout()     { noise({ d: 0.35, v: 0.22, f: 700, f2: 2200 }); tone({ type: 'sawtooth', f: 90, f2: 220, d: 0.4, v: 0.16 }); },   // 「極！」怒喝
+    slowHit()   { tone({ type: 'triangle', f: 500, f2: 140, d: 0.3, v: 0.1 }); }   // 玩家被「極！」擊中緩速
   };
 
   // ---- 背景音樂 ----
