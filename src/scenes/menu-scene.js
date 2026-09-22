@@ -13,7 +13,7 @@
   const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings'];
   const BTN = { w: 300, h: 54, y0: 596, gap: 66 };
   const TESTBOSS_Y = { y0: 350, gap: 100 };   // 「測試 BOSS」頁的兩個 BOSS 選項
-  const CHEAT_CODE = ['B', 'O', 'S', 'S'];    // 隱藏指令：在主選單依序按下 B O S S（跟輸入法無關，讀的是實體鍵盤按鍵）
+  const CHEAT_CODE = ['O', 'P', 'E', 'N'];    // 隱藏指令：在主選單依序按下 O P E N（跟輸入法 / 大小寫無關，讀的是實體鍵盤按鍵；刻意避開 W/A/S/D，不會跟選單上下移動衝突）
 
   // 頁面（操作說明 / 設定 / 排行榜）的版面
   const PANEL = { x: 30, y: 70, w: 480, h: 820 };
