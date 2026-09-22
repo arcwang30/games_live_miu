@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.22g',
+    VERSION: '2026.09.23e',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -90,10 +90,12 @@
     BOSS2: {
       radius: 64, homeY: 250,           // 跟流氓大老鼠同尺寸、同待機高度
       idle: 1.3,
-      knifeSpeed: 620,                  // 斬擊：刀劍光波子彈速度
-      punchRange: 96, punchGap: 0.11,   // 拳頭攻擊：判定半徑、兩拳之間的間隔（秒，未乘等級倍率前）
-      coneSpeed: 460, coneShardSpeed: 300, coneSplitDelay: 0.42, coneShards: 6,  // 三角錐攻擊：小刀速度／碎片速度／飛行多久後炸開／碎片數
-      shout: { charge: 0.5, hold: 1.1, maxRadius: 720, slowTime: 2.4 }          // 「極！」：蓄力／擴散到最大要多久／最大半徑（大到能罩住整個玩家活動範圍）／緩速秒數
+      moonSpeed: 510,                   // 揮刀：半月形弧光往畫面下方飛的速度（原本 340，使用者要求再快 0.5 倍）
+      punchReach: 150, punchHitR: 50, punchGap: 0.16,   // 百裂拳：拳頭最遠能伸出多遠（超過這個距離就搆不到鎖定的區塊，等於伸到底也只到 +80 的上限）、拳頭判定半徑、兩拳間隔（秒，未乘等級倍率前）
+      coneSpeed: 460, coneShardSpeed: 280, coneSplitDelay: 0.42, coneShards: 5,  // 三角錐攻擊：小刀速度／碎片速度／飛行多久後炸開／碎片數
+      // 「極！」：以 BOSS 為中心朝外螺旋狀連續射出多發「極」字子彈（玩家要真的碰到才會緩速，不是範圍攻擊）：
+      // 蓄力／子彈飛行速度／緩速秒數／每發之間轉的角度／每發之間的間隔秒數
+      shout: { charge: 0.5, speed: 440, slowTime: 2.4, spiralStep: 0.5, spiralGap: 0.055 }
     }
   };
 })(window.BM = window.BM || {});

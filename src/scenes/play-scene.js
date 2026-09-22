@@ -5,7 +5,8 @@
   const PAUSE_ITEMS = ['pause.resume', 'pause.menu'];
 
   class PlayScene {
-    enter() {
+    // params.testBoss：'gangster' | 'kiryu'（從主選單「測試 BOSS」進來時直接跳到該 BOSS 的那一波，其餘流程照常）
+    enter(params) {
       BM.Audio.playMusic(this.musicFor(1));
       BM.Particles.clear();
       BM.Popups.clear();
@@ -38,6 +39,7 @@
       this.pauseIdx = 0;
       this.banner = null;
       BM.Touch.setMode('play');       // 一進入遊戲就啟用觸控介面（不用等第一格更新）
+      if (params && params.testBoss) this.wave = (params.testBoss === 'kiryu' ? C.BOSS.EVERY * 2 : C.BOSS.EVERY) - 1;   // 測試 BOSS：startWave() 會 +1，直接跳到那一波
       this.startWave();
     }
     exit() {
@@ -53,8 +55,10 @@
       BM.Audio.sfx('shoot');
     }
     fireBullet(x, y, angle, speed, kind) {
-      if (kind !== 'fish' && this.eBullets.length >= 140) return;     // 彈開的小魚只是特效，不佔用子彈上限
-      this.eBullets.push(new BM.EnemyBullet(x, y, angle, speed, kind));
+      if (kind !== 'fish' && this.eBullets.length >= 140) return null;   // 彈開的小魚只是特效，不佔用子彈上限
+      const b = new BM.EnemyBullet(x, y, angle, speed, kind);
+      this.eBullets.push(b);
+      return b;                                                          // 回傳子彈物件：有些攻擊要在飛行途中追蹤它（例如桐生爹鼠的三角錐攻擊）
     }
     sfx(name) { BM.Audio.sfx(name); }
     addShake(v) { this.shake = Math.max(this.shake, v); }
@@ -363,11 +367,15 @@
         if (dx * dx + dy * dy < r * r || bo.meleeHit(p)) { this.killPlayer(); return; }
       }
 
-      // 敵方子彈 → 玩家
+      // 敵方子彈 → 玩家（b.slowTime 有值的是桐生爹鼠「極！」射出的字：碰到只會緩速，不會扣命，見 boss.js 的 updateShout）
       for (const b of this.eBullets) {
         if (b.dead || b.harmless) continue;
         const dx = b.x - p.x, dy = b.y - p.y, r = p.radius + b.r;
-        if (dx * dx + dy * dy < r * r) { b.dead = true; this.killPlayer(); return; }
+        if (dx * dx + dy * dy < r * r) {
+          b.dead = true;
+          if (b.slowTime) { p.applySlow(b.slowTime); this.sfx('slowHit'); continue; }
+          this.killPlayer(); return;
+        }
       }
       // 出擊中的敵機 → 玩家（登場、待機、返回中不會撞傷）
       for (const e of this.enemies) {

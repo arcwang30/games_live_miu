@@ -147,10 +147,10 @@
         case 'cheese': this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 2 + this.phase }; break;
         case 'charge': this.a = { stage: 'tele', t: 0, lockX: this.x, locked: false, vy: 0, n: 0, total: this.phase === 3 ? 2 : 1 }; w.sfx('lock'); break;
         case 'claw':   this.a = { stage: 'approach', t: 0, n: 0, total: this.phase >= 2 ? 2 : 1, dir: 1, theta: PI / 2 }; w.sfx('clawWind'); break;
-        case 'slash':  this.a = { stage: 'wind', t: 0, volley: 0, timer: 0, total: this.phase }; break;                                          // 連揮 1～3 次
+        case 'slash':  this.a = { stage: 'approach', t: 0, n: 0, total: this.phase >= 2 ? 2 : 1, flashT: 0 }; break;    // 跟爪擊同樣的欺近→蓄力→出招節奏，1～2 揮
         case 'punch':  this.a = { stage: 'approach', t: 0, n: 0, total: 4 + this.phase * 2, timer: 0, jab: false, jabT: 0 }; break;               // 6/8/10 拳
-        case 'cone':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 1 + this.phase, pending: [] }; break;
-        case 'shout':  this.a = { stage: 'wind', t: 0, hit: false }; w.sfx('shout'); break;
+        case 'cone':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: this.phase, pending: [] }; break;   // 1/2/3 把，原本 2/3/4 太密
+        case 'shout':  this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 14 + this.phase * 4, ang: Math.random() * M.TAU }; w.sfx('shout'); break;  // 18/22/26 發，繞著 BOSS 轉出螺旋
       }
     }
 
@@ -346,34 +346,58 @@
       if (this.state === 'punch') return this.punchHit(p);
       return false;
     }
+    // 拳頭本身的判定：像流星拳一樣，整串連續出拳都打在同一個固定區塊（flurry 開始時鎖定的 a.tx/a.ty），不是追著玩家跑
     punchHit(p) {
       if (this.state !== 'punch' || !this.a.jab) return false;
-      const dx = p.x - this.x, dy = p.y - this.cy;
-      return dx * dx + dy * dy < B2.punchRange * B2.punchRange;
+      const dx = p.x - this.a.tx, dy = p.y - this.a.ty;
+      return dx * dx + dy * dy < B2.punchHitR * B2.punchHitR;
+    }
+    // 拳頭座標：從「手」的固定位置（配合貼圖左右手，不是身體中心，也不是嘴巴）伸向鎖定的目標區塊；k = 伸出的進度（0~1）
+    punchFist(k) {
+      const a = this.a, hx = this.x + a.dir * 76, hy = this.y + 70;
+      const dx = a.tx - hx, dy = a.ty - hy, full = Math.min(B2.punchReach + 80, Math.hypot(dx, dy) || 1);
+      const ang = Math.atan2(dy, dx), ext = Math.min(1, k * 1.6);
+      return { x: hx + Math.cos(ang) * full * ext, y: hy + Math.sin(ang) * full * ext, hx, hy, ang };
     }
 
-    // ---- 桐生爹鼠：揮刀（刀劍光波，大範圍扇形斬擊）----
+    // ---- 桐生爹鼠：揮刀（節奏模擬流氓大老鼠的爪擊：欺近→舉刀蓄力→揮，但不是近戰，而是射出一道半月形弧光往畫面下方飛）----
     updateSlash(dt, w) {
-      const a = this.a; a.t += dt;
-      this.hover(dt, 0.4);
-      if (!w.player.alive) { this.toIdle(); return; }
-      if (a.stage === 'wind') {
-        this.sx = Math.sin(this.time * 50) * 1.8;
-        if (a.t >= 0.45 / this.spd) { a.stage = 'fire'; a.t = 0; w.sfx('knife'); this.fireSlash(w); a.volley = 1; a.timer = 0.5 / this.spd; }
-      } else if (a.stage === 'fire') {
-        a.timer -= dt;
-        if (a.timer <= 0) {
-          if (a.volley < a.total) { this.fireSlash(w); a.volley++; a.timer = 0.5 / this.spd; w.sfx('knife'); }
-          else { a.stage = 'end'; a.t = 0; }
+      const a = this.a, p = w.player; a.t += dt;
+      if (a.flashT > 0) a.flashT -= dt;
+      if (!p.alive && (a.stage === 'approach' || a.stage === 'wind' || a.stage === 'wind2')) { a.stage = 'retreat'; a.t = 0; return; }
+      switch (a.stage) {
+        case 'approach':
+          this.x += (p.x - this.x) * Math.min(1, 4 * dt);          // 欺近到玩家正上方（跟爪擊一樣），弧光才會準準地往玩家所在的方向落下
+          this.y += (B.homeY - this.y) * Math.min(1, 5 * dt);
+          if (a.t >= 0.7 / this.spd || a.t > 0.4) { a.stage = 'wind'; a.t = 0; w.sfx('clawWind'); }
+          break;
+        case 'wind': case 'wind2': {
+          const dur = (a.stage === 'wind' ? 0.55 : 0.4) / this.spd;
+          this.sx = Math.sin(this.time * 50) * 1.8;                 // 舉刀蓄力：身體顫抖 + 刀身閃光提示（drawTele 的 'slash' 類型）
+          this.tele = { type: 'slash', k: Math.min(1, a.t / dur) };
+          if (a.t >= dur) { a.stage = 'release'; a.t = 0; this.fireMoon(w); this.tele = null; }
+          break;
         }
-      } else if (a.t >= 0.6 / this.spd) this.toIdle();
+        case 'release':
+          if (a.t >= 0.2 / this.spd) {
+            a.n++;
+            if (a.n < a.total && p.alive) { a.stage = 'wind2'; a.t = 0; w.sfx('clawWind'); }
+            else { a.stage = 'retreat'; a.t = 0; }
+          }
+          break;
+        case 'retreat':
+          this.hover(dt, 0.6);
+          if (Math.abs(this.y - B.homeY) < 14) this.toIdle();
+          break;
+      }
     }
-    fireSlash(w) {
-      const count = this.phase >= 2 ? 11 : 8, span = 2.4;      // 比流氓大老鼠的傘狀彈更寬，強調「大範圍斬擊」
-      const center = M.clamp(Math.atan2(this.py - this.y, this.px - this.x), PI / 2 - 0.6, PI / 2 + 0.6);
-      const step = span / (count - 1), sp = B2.knifeSpeed * this.bm * (this.phase === 3 ? 1.1 : 1);
-      for (let i = 0; i < count; i++) w.fireBullet(this.x, this.y + 50, center - span / 2 + i * step, sp, 'knife');
-      BM.Particles.explode(this.x + 40, this.y + 10, '#bfe6ff', 6);
+    // 射出一道半月形弧光，直直往畫面下方飛（此時 BOSS 已經欺近到玩家正上方，等同瞄準了玩家）
+    fireMoon(w) {
+      w.fireBullet(this.x, this.y + 50, PI / 2, B2.moonSpeed * this.bm, 'moon');
+      this.a.flashCenter = PI / 2; this.a.flashSpan = 1.15; this.a.flashT = 0.26;   // 揮刀的白色弧光（drawSwordFlash，加大加粗強化魄力）
+      BM.Particles.explode(this.x, this.y + 50, '#bfe6ff', 16);
+      BM.Particles.explode(this.x, this.y + 50, '#ffffff', 8);
+      w.sfx('knife'); w.addShake(0.22);
     }
 
     // ---- 桐生爹鼠：百裂拳（欺近後連續揮拳，近戰）----
@@ -385,18 +409,22 @@
           const ty = M.clamp(p.y - 150, 300, 660);
           this.x += (p.x - this.x) * Math.min(1, 4.4 * dt);
           this.y += (ty - this.y) * Math.min(1, 5 * dt);
-          if (a.t >= 0.7 / this.spd || (a.t > 0.35 && Math.abs(ty - this.y) < 10)) { a.stage = 'flurry'; a.t = 0; a.timer = 0.16 / this.spd; }
+          if (a.t >= 0.7 / this.spd || (a.t > 0.35 && Math.abs(ty - this.y) < 10)) {
+            a.stage = 'flurry'; a.t = 0; a.timer = 0.35 / this.spd;   // 第一拳前留久一點的警示時間，讓玩家看得到紅色範圍再閃
+            a.tx = M.clamp(p.x, C.PLAYER.minX, C.PLAYER.maxX); a.ty = p.y;   // 像流星拳一樣：鎖定一個固定區塊，接下來整串拳都打在這裡（不是追著玩家跑）
+          }
           break;
         }
         case 'flurry':
-          this.hover(dt, 0.15);
+          // 身體整個定住不動（不會飄回待機位置），靠雙手伸縮連續打向鎖定的區塊，才會像流星拳一樣密集
+          this.tele = { type: 'punch', x: a.tx, y: a.ty };   // 紅色警示範圍：整串連續出拳期間都顯示，讓玩家知道哪裡會被打到
           if (a.jab) { a.jabT -= dt; if (a.jabT <= 0) a.jab = false; }
           a.timer -= dt;
           if (a.timer <= 0 && a.n < a.total) {
-            a.jab = true; a.jabT = 0.09; a.dir = a.n % 2 === 0 ? 1 : -1; a.n++;
+            a.jab = true; a.jabT = 0.12; a.dir = a.n % 2 === 0 ? 1 : -1; a.n++;
             a.timer = B2.punchGap / this.spd;
             w.sfx('punch'); w.addShake(0.08);
-            BM.Particles.explode(this.x + a.dir * 30, this.cy + 10, '#ffffff', 3);
+            BM.Particles.explode(a.tx, a.ty, '#ffffff', 4);
           } else if (a.timer <= 0 && a.n >= a.total) { a.stage = 'retreat'; a.t = 0; }
           break;
         case 'retreat':
@@ -421,48 +449,52 @@
         if (a.timer <= 0 && a.thrown < a.total) {
           const lead = M.clamp(p.x + M.clamp(p.vx, -C.PLAYER.speed, C.PLAYER.speed) * 0.2, 20, W - 20);
           const ang = Math.atan2(p.y - hy, lead - hx), sp = B2.coneSpeed * this.bm;
-          w.fireBullet(hx, hy, ang, sp, 'knife');
-          a.pending.push({ x: hx + Math.cos(ang) * sp * B2.coneSplitDelay, y: hy + Math.sin(ang) * sp * B2.coneSplitDelay, t: B2.coneSplitDelay });
+          const knife = w.fireBullet(hx, hy, ang, sp, 'knife');
+          if (knife) a.pending.push({ b: knife, t: B2.coneSplitDelay });   // 追蹤這把小刀，時間到了就在它「當下的位置」炸開（不是預測位置）
           w.sfx('knife');
           a.thrown++;
           a.timer = 0.3 / this.spd;
           if (a.thrown >= a.total) { a.stage = 'end'; a.t = 0; }
         }
       } else if (a.t >= 0.4 / this.spd && !a.pending.length) this.toIdle();
-      for (let i = a.pending.length - 1; i >= 0; i--) {                 // 小刀飛行一段時間後，在預測的落點原地炸開成一圈碎片
+      for (let i = a.pending.length - 1; i >= 0; i--) {                 // 小刀飛行一段時間後，在它當下的位置原地炸開成一圈碎片（原本那把小刀就此消失，不會繼續往下飛）
         const it = a.pending[i]; it.t -= dt;
-        if (it.t <= 0) {
-          const n = B2.coneShards;
-          for (let k = 0; k < n; k++) w.fireBullet(it.x, it.y, k / n * M.TAU, B2.coneShardSpeed * this.bm, 'knife');
-          BM.Particles.explode(it.x, it.y, '#bfe6ff', 10);
-          w.sfx('shard');
+        if (it.t <= 0 || it.b.dead) {
+          if (!it.b.dead) {
+            const n = B2.coneShards;
+            for (let k = 0; k < n; k++) w.fireBullet(it.b.x, it.b.y, k / n * M.TAU, B2.coneShardSpeed * this.bm, 'knife');
+            BM.Particles.explode(it.b.x, it.b.y, '#bfe6ff', 10);
+            w.sfx('shard');
+            it.b.dead = true;
+          }
           a.pending.splice(i, 1);
         }
       }
     }
 
-    // ---- 桐生爹鼠：「極！」（口中喊出文字向外擴散，碰到會緩速，不會扣命）----
+    // ---- 桐生爹鼠：「極！」（口中喊出的字本身就是一發子彈，玩家要真的碰到才會緩速，不是範圍攻擊；打中判定在 play-scene.js 的 collide()）----
+    // 以 BOSS 為中心，朝外連續射出「極」字子彈，每發都比上一發轉一點角度 → 疊出一條展開中的螺旋
     updateShout(dt, w) {
-      const a = this.a; a.t += dt;
+      const a = this.a, p = w.player; a.t += dt;
       this.hover(dt, 0.3);
       const K = B2.shout, mx = this.x, my = this.y + 30;
+      if (!p.alive) { this.toIdle(); return; }
       if (a.stage === 'wind') {
         this.sx = Math.sin(this.time * 40) * 1.4;
         this.tele = { type: 'shout', x: mx, y: my, k: Math.min(1, a.t / (K.charge / this.spd)) };
-        if (a.t >= K.charge / this.spd) { a.stage = 'hold'; a.t = 0; }
-      } else if (a.stage === 'hold') {
-        // 範圍像衝擊波一樣持續擴大（從口中往外罩住整個畫面），蓄力階段的「極」字放大是唯一的預警，
-        // 想閃開就要趁擴散還沒到達自己所在的位置前先移動
-        const dur = K.hold / this.spd, k = Math.min(1, a.t / dur);
-        const r = K.maxRadius * k;
-        this.tele = { type: 'shout', x: mx, y: my, k: 1, r };
-        const p = w.player;
-        if (p.alive) {
-          const dx = p.x - mx, dy = p.y - my;
-          if (dx * dx + dy * dy < r * r) { p.applySlow(K.slowTime); if (!a.hit) { a.hit = true; w.sfx('slowHit'); } }
+        if (a.t >= K.charge / this.spd) { a.stage = 'fire'; a.t = 0; a.timer = 0; this.tele = null; }
+      } else if (a.stage === 'fire') {
+        a.timer -= dt;
+        if (a.timer <= 0 && a.thrown < a.total) {
+          const b = w.fireBullet(mx, my, a.ang, K.speed * this.bm, 'goku');
+          if (b) b.slowTime = K.slowTime;         // 標記這發子彈「打中只緩速、不扣命」（collide() 會檢查這個欄位）
+          w.sfx('gokuThrow');
+          a.ang += K.spiralStep;                  // 下一發轉一個角度，疊出螺旋
+          a.thrown++;
+          a.timer = K.spiralGap / this.spd;
+          if (a.thrown >= a.total) { a.stage = 'end'; a.t = 0; }
         }
-        if (a.t >= dur) { a.stage = 'end'; a.t = 0; }
-      } else if (a.t >= 0.35 / this.spd) this.toIdle();
+      } else if (a.t >= 0.4 / this.spd) this.toIdle();
     }
 
     // ---- 厭世死亡演出 ----
@@ -511,13 +543,14 @@
           ctx.beginPath(); ctx.moveTo(s * 24 - 10, 102); ctx.lineTo(s * 24, 102 + fl); ctx.lineTo(s * 24 + 10, 102); ctx.closePath(); ctx.fill();
         }
       }
-      const pulse = (this.state === 'fan' || this.state === 'slash') && this.a.stage === 'wind' ? 1 + Math.sin(t * 30) * 0.03 : 1;
+      const pulse = (this.state === 'fan' && this.a.stage === 'wind') || (this.state === 'slash' && (this.a.stage === 'wind' || this.a.stage === 'wind2')) ? 1 + Math.sin(t * 30) * 0.03 : 1;
       BM.Sprites.draw(ctx, this.spritePrefix + this.face + (this.flash > 0 ? '_hit' : ''), 0, 0, 0, pulse);
       ctx.restore();
 
       if (this.guarding) { this.drawClaws(ctx, t); this.drawGuard(ctx, t); }
       if (this.state === 'claw' && this.a.stage === 'swipe') this.drawSlash(ctx);
       if (this.state === 'punch' && this.a.jab) this.drawPunch(ctx);
+      if (this.state === 'slash' && this.a.flashT > 0) this.drawSwordFlash(ctx);
       for (const f of this.puffs) {                                // 嘆氣煙圈
         const k = f.t / 1.6;
         ctx.save();
@@ -571,31 +604,65 @@
         ctx.globalAlpha = tl.k;
         ctx.fillStyle = '#bfe6ff';
         ctx.beginPath(); ctx.arc(tl.hx + 30, tl.hy, 10 * tl.k, 0, M.TAU); ctx.fill();
-      } else if (tl.type === 'shout') {                     // 「極！」：從口中喊出的文字向外擴散（範圍中心在嘴巴，但文字畫在頭頂上方，才不會被身體擋住）
-        const labelY = this.y - 104;
-        if (tl.r === undefined) {                             // 蓄力：文字放大
-          D.text(ctx, '極', tl.x, labelY, { size: 20 + tl.k * 24, align: 'center', color: '#ff5a5a', stroke: '#fff', strokeW: 4, weight: '900' });
-        } else {
-          const pulse = 0.1 + 0.08 * Math.sin(t * 20);
-          ctx.beginPath(); ctx.arc(tl.x, tl.y, tl.r, 0, M.TAU);
-          ctx.fillStyle = 'rgba(255,70,70,' + pulse + ')'; ctx.fill();
-          ctx.strokeStyle = 'rgba(255,110,110,0.8)'; ctx.lineWidth = 3; ctx.stroke();
-          D.text(ctx, '極！', tl.x, labelY, { size: 44, align: 'center', color: '#ff5a5a', stroke: '#fff', strokeW: 5, weight: '900', alpha: Math.min(1, tl.r / 60) });
-        }
+      } else if (tl.type === 'slash') {                     // 揮刀：舉刀蓄力，刀身越來越亮
+        const cx = this.x + 46, cy = this.y + 20, len = 18 + tl.k * 30;
+        ctx.globalAlpha = 0.5 + tl.k * 0.5;
+        ctx.strokeStyle = '#eaf7ff'; ctx.lineWidth = 4; ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(140,220,255,0.9)'; ctx.shadowBlur = 10 * tl.k;
+        ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + len * 0.3, cy - len); ctx.stroke();
+      } else if (tl.type === 'shout') {                     // 「極！」：蓄力時文字在頭頂上方放大（不會被身體擋住），準備射出去
+        D.text(ctx, '極', tl.x, this.y - 104, { size: 20 + tl.k * 26, align: 'center', color: '#ff5a5a', stroke: '#fff', strokeW: 4, weight: '900' });
+      } else if (tl.type === 'punch') {                     // 百裂拳：紅色警示範圍，整串拳都會打在這裡（跟 punchHit 的判定範圍一致）
+        const pulse = 0.14 + 0.12 * Math.sin(t * 22);
+        ctx.beginPath(); ctx.arc(tl.x, tl.y, B2.punchHitR, 0, M.TAU);
+        ctx.fillStyle = 'rgba(255,50,50,' + pulse + ')'; ctx.fill();
+        ctx.strokeStyle = 'rgba(255,90,90,0.9)'; ctx.lineWidth = 3; ctx.stroke();
+        ctx.strokeStyle = 'rgba(255,255,255,0.6)'; ctx.lineWidth = 1.5;         // 十字準星，更明確標出中心
+        ctx.beginPath();
+        ctx.moveTo(tl.x - B2.punchHitR - 10, tl.y); ctx.lineTo(tl.x + B2.punchHitR + 10, tl.y);
+        ctx.moveTo(tl.x, tl.y - B2.punchHitR - 10); ctx.lineTo(tl.x, tl.y + B2.punchHitR + 10);
+        ctx.stroke();
       }
       ctx.restore();
     }
 
-    // 百裂拳的其中一拳：一團白色拳頭殘影從身體衝出去，配合 punchHit 的判定範圍
+    // 百裂拳的其中一拳：白西裝袖口 + 拳頭，從左右手的固定位置衝向鎖定的區塊（流星拳的效果：兩手交替出拳但都打在同一小塊地方）
     drawPunch(ctx) {
-      const a = this.a, cx = this.x, cy = this.cy, k = 1 - a.jabT / 0.09;
-      const r = B2.punchRange * (0.35 + 0.65 * k);
+      const a = this.a, k = 1 - a.jabT / 0.12;
+      const f = this.punchFist(k), ang = f.ang;
       ctx.save();
-      ctx.globalAlpha = 0.5 * (1 - k);
-      ctx.fillStyle = '#ffffff';
-      ctx.beginPath(); ctx.arc(cx + a.dir * r * 0.5, cy, 20, 0, M.TAU); ctx.fill();
-      ctx.globalAlpha = 0.16;
-      ctx.beginPath(); ctx.arc(cx, cy, r, 0, M.TAU); ctx.fill();
+      ctx.lineCap = 'round';
+      ctx.strokeStyle = '#241c1a'; ctx.lineWidth = 9;                                       // 手臂：從「手」的固定位置（貼圖上左右手的位置）伸出去，不是身體中心或嘴巴
+      ctx.beginPath(); ctx.moveTo(f.hx, f.hy); ctx.lineTo(f.x, f.y); ctx.stroke();
+      ctx.fillStyle = '#f7f5ef'; ctx.strokeStyle = '#241c1a'; ctx.lineWidth = 3;             // 白西裝袖口
+      ctx.beginPath(); ctx.arc(f.x, f.y, 25, 0, M.TAU); ctx.fill(); ctx.stroke();
+      ctx.fillStyle = '#caa588'; ctx.beginPath(); ctx.arc(f.x + Math.cos(ang) * 7, f.y + Math.sin(ang) * 7, 19, 0, M.TAU); ctx.fill(); ctx.stroke();   // 拳頭
+      const perp = ang + PI / 2;
+      for (let j = -1; j <= 1; j++) {                                                       // 指節
+        ctx.beginPath();
+        ctx.arc(f.x + Math.cos(ang) * 16 + Math.cos(perp) * j * 9.5, f.y + Math.sin(ang) * 16 + Math.sin(perp) * j * 9.5, 4.2, 0, M.TAU);
+        ctx.fillStyle = '#8a6f5c'; ctx.fill();
+      }
+      if (k > 0.55) {                                                                       // 衝擊瞬間的白色放射線
+        ctx.globalAlpha = (k - 0.55) / 0.45 * 0.8;
+        ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 4;
+        for (let j = -1; j <= 1; j++) { const a2 = ang + j * 0.5; ctx.beginPath(); ctx.moveTo(f.x, f.y); ctx.lineTo(f.x + Math.cos(a2) * 30, f.y + Math.sin(a2) * 30); ctx.stroke(); }
+      }
+      ctx.restore();
+    }
+
+    // 揮刀的白色弧光（跟 fireMoon 同一刻觸發，讓玩家看得到「揮了一刀」，不是子彈憑空出現；加大加粗強化魄力）
+    drawSwordFlash(ctx) {
+      const a = this.a, k = a.flashT / 0.26, cx = this.x, cy = this.y + 50;
+      const c = a.flashCenter, s = a.flashSpan / 2;
+      ctx.save();
+      ctx.globalAlpha = k;
+      ctx.lineCap = 'round';
+      ctx.shadowColor = 'rgba(140,220,255,0.9)'; ctx.shadowBlur = 24;
+      ctx.beginPath(); ctx.arc(cx, cy, 96, c - s, c + s);
+      ctx.strokeStyle = 'rgba(140,220,255,0.95)'; ctx.lineWidth = 26; ctx.stroke();
+      ctx.shadowBlur = 0;
+      ctx.strokeStyle = '#ffffff'; ctx.lineWidth = 10; ctx.stroke();
       ctx.restore();
     }
 

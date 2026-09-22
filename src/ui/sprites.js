@@ -449,6 +449,37 @@
     g.restore();
   }
 
+  function drawMoon(g) {                 // 敵方子彈：揮刀射出的半月形弧光；凸面朝 +x，配合 EnemyBullet 用飛行角度當 rot（往畫面下方飛時 rot = 90°）。
+    g.save();                            // 加厚、加亮版（魄力強化）：旋轉後在畫面上寬約 150px、比原本厚快兩倍
+    g.shadowColor = 'rgba(120,210,255,0.95)'; g.shadowBlur = 42;
+    g.beginPath();
+    g.arc(-18, 0, 98, -0.92, 0.92);                      // 外弧（凸面朝 +x）
+    g.arc(18, 0, 52, 0.98, -0.98, true);                 // 內弧（往 +x 偏，挖出更厚的月牙厚度）
+    g.closePath();
+    const gr = g.createLinearGradient(-60, 0, 80, 0);
+    gr.addColorStop(0, 'rgba(120,210,255,0.35)'); gr.addColorStop(0.55, '#bfe6ff'); gr.addColorStop(1, '#ffffff');
+    g.fillStyle = gr; g.fill();
+    g.lineWidth = 10; g.strokeStyle = '#ffffff'; g.stroke();
+    g.shadowBlur = 0;
+    g.lineWidth = 5; g.strokeStyle = 'rgba(20,70,100,0.65)'; g.stroke();
+    g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 5; g.lineCap = 'round';   // 中央一道更亮的刀氣能量線，強化力道感
+    g.beginPath(); g.arc(0, 0, 74, -0.66, 0.66); g.stroke();
+    g.restore();
+  }
+
+  function drawGoku(g) {                 // 敵方子彈：桐生爹鼠「極！」射出的字（碰到會緩速，不會扣命）。字比原本大一倍
+    g.save();
+    g.font = '900 60px ' + BM.Draw.CJK;
+    g.textAlign = 'center'; g.textBaseline = 'middle';
+    g.shadowColor = 'rgba(255,90,90,0.9)'; g.shadowBlur = 14;
+    g.lineWidth = 9; g.strokeStyle = '#ffffff';
+    g.strokeText('極', 0, 2);
+    g.shadowBlur = 0;
+    g.fillStyle = '#ff5a5a';
+    g.fillText('極', 0, 2);
+    g.restore();
+  }
+
   function drawOrb(g) {                  // 敵方子彈：橘紅光球
     const gr = g.createRadialGradient(0, 0, 0, 0, 0, 9);
     gr.addColorStop(0, '#ffffff');
@@ -486,6 +517,8 @@
       make('poop', 30, 34, drawPoop);
       make('cheese', 34, 30, drawCheese);
       make('knife', 22, 22, drawKnife);
+      make('moon', 220, 220, drawMoon);
+      make('goku', 100, 100, drawGoku);
       for (const f of ['normal', 'angry', 'dead']) {
         make('boss_' + f, 250, 250, g => drawBoss(g, f));
         makeFlash('boss_' + f);

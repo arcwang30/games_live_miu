@@ -10,7 +10,9 @@
   const STR = {
     zh: {
       // 主選單
-      'menu.start': '開始遊戲', 'menu.ranking': '排行榜', 'menu.howto': '操作說明', 'menu.settings': '設定',
+      'menu.start': '開始遊戲', 'menu.ranking': '排行榜', 'menu.howto': '操作說明', 'menu.settings': '設定', 'menu.testboss': '測試 BOSS',
+      'test.title': '測試 BOSS', 'test.hint': '選擇要挑戰的 BOSS，會直接開始戰鬥（略過一般波）',
+      'test.keys': '↑ ↓ 選擇　Enter 確認　Esc / B 返回', 'test.tap': '點選 BOSS 開始',
       'hint.touch1': '點選按鈕開始　遊戲中按住畫面，戰機在手指上方跟隨',
       'hint.touch2': '子彈自動連射　右上角 ⏸ 可暫停',
       'hint.kb': '↑ ↓ / W S / 十字鍵 選擇　　Enter / 空白鍵 / A 確認',
@@ -176,7 +178,9 @@
     },
 
     ja: {
-      'menu.start': 'ゲーム開始', 'menu.ranking': 'ランキング', 'menu.howto': '操作説明', 'menu.settings': '設定',
+      'menu.start': 'ゲーム開始', 'menu.ranking': 'ランキング', 'menu.howto': '操作説明', 'menu.settings': '設定', 'menu.testboss': 'ボステスト',
+      'test.title': 'ボステスト', 'test.hint': '挑戦するボスを選ぶと、すぐに戦闘が始まります（通常波はスキップ）',
+      'test.keys': '↑ ↓ 選択　Enter 決定　Esc / B 戻る', 'test.tap': 'ボスをタップして開始',
       'hint.touch1': 'ボタンをタップして開始　プレイ中は画面を押すと機体が指の上を追従',
       'hint.touch2': '弾は自動連射　右上の ⏸ で一時停止',
       'hint.kb': '↑ ↓ / W S / 十字キー 選択　　Enter / スペース / A 決定',
@@ -334,7 +338,9 @@
     },
 
     en: {
-      'menu.start': 'START GAME', 'menu.ranking': 'RANKING', 'menu.howto': 'HOW TO PLAY', 'menu.settings': 'SETTINGS',
+      'menu.start': 'START GAME', 'menu.ranking': 'RANKING', 'menu.howto': 'HOW TO PLAY', 'menu.settings': 'SETTINGS', 'menu.testboss': 'Boss Test',
+      'test.title': 'Boss Test', 'test.hint': 'Pick a boss to fight immediately (skips the regular waves)',
+      'test.keys': 'Up/Down select   Enter confirm   Esc/B back', 'test.tap': 'Tap a boss to start',
       'hint.touch1': 'Tap to start · Hold the screen: ship follows your finger',
       'hint.touch2': 'Auto-fire · Pause with ⏸ (top right)',
       'hint.kb': '↑ ↓ / W S / D-pad: Select　　Enter / Space / A: OK',

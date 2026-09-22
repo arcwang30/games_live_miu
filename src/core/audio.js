@@ -170,7 +170,8 @@
     knife()     { noise({ d: 0.14, v: 0.1, f: 7000, f2: 2000 }); tone({ type: 'triangle', f: 1800, f2: 2600, d: 0.08, v: 0.05 }); },   // 拔刀 / 揮刀
     shard()     { for (let i = 0; i < 5; i++) tone({ type: 'sine', f: 2200 + Math.random() * 1400, d: 0.07, v: 0.05, delay: i * 0.02 }); },   // 小刀炸開分散
     punch()     { noise({ d: 0.06, v: 0.15, f: 500, f2: 90 }); tone({ type: 'square', f: 130, f2: 60, d: 0.05, v: 0.1 }); },   // 一拳
-    shout()     { noise({ d: 0.35, v: 0.22, f: 700, f2: 2200 }); tone({ type: 'sawtooth', f: 90, f2: 220, d: 0.4, v: 0.16 }); },   // 「極！」怒喝
+    shout()     { noise({ d: 0.35, v: 0.22, f: 700, f2: 2200 }); tone({ type: 'sawtooth', f: 90, f2: 220, d: 0.4, v: 0.16 }); },   // 「極！」怒喝（蓄力時）
+    gokuThrow() { tone({ type: 'square', f: 720, f2: 1100, d: 0.1, v: 0.06 }); tone({ type: 'sine', f: 1400, d: 0.12, v: 0.04, delay: 0.02 }); },   // 「極」字射出
     slowHit()   { tone({ type: 'triangle', f: 500, f2: 140, d: 0.3, v: 0.1 }); }   // 玩家被「極！」擊中緩速
   };
 

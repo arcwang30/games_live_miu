@@ -3,12 +3,17 @@
 //   設定：三個頁籤（由左至右）—「語言」「了解歷史」「CREDIT」，預設「語言」；
 //         「了解歷史」內含 3 個分頁：關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（前兩個內文之後補上；第三個有 LOGO、長文字與粉絲團連結按鈕）
 // 頁籤操作：← → 切換頁籤、（語言頁籤）↑ ↓ 選擇、（關於頁籤）↑ ↓ / 滾輪 / 拖曳捲動（捲到頭尾再按 = 換分頁）、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
+//
+// 隱藏的「測試 BOSS」：不是選單上看得到的按鈕，在主選單畫面用鍵盤打出 CHEAT_CODE（見下方常數）就會開啟，
+// 開發用（直接跳到某一隻 BOSS 開戰，略過一般波），測試完 Esc / B 就能返回主選單。
 (function (BM) {
   const C = BM.CONFIG, W = C.W, M = BM.M, D = BM.Draw, I = BM.Input;
   const L = (k, v) => BM.I18n.t(k, v);
 
   const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings'];
   const BTN = { w: 300, h: 54, y0: 596, gap: 66 };
+  const TESTBOSS_Y = { y0: 350, gap: 100 };   // 「測試 BOSS」頁的兩個 BOSS 選項
+  const CHEAT_CODE = ['B', 'O', 'S', 'S'];    // 隱藏指令：在主選單依序按下 B O S S（跟輸入法無關，讀的是實體鍵盤按鍵）
 
   // 頁面（操作說明 / 設定 / 排行榜）的版面
   const PANEL = { x: 30, y: 70, w: 480, h: 820 };
@@ -41,6 +46,7 @@
         this.mice.push({ x: M.rand(40, W - 40), y: M.rand(-200, 300), v: M.rand(28, 55), type: i % 4, ph: Math.random() * 6 });
       }
       this.jet = new BM.JetFx();
+      this.cheatBuf = [];           // 隱藏指令：主選單畫面按下的最近幾個字母（跟 CHEAT_CODE 比對）
       BM.Audio.playMusic('menu');
     }
     exit() { this.showFb(false); }
@@ -67,7 +73,20 @@
       }
     }
 
-    goMain() { this.mode = 'main'; BM.Audio.sfx('move'); }
+    // 隱藏指令：主選單畫面依序打出 CHEAT_CODE（預設 B O S S）就直接開啟「測試 BOSS」
+    checkCheat() {
+      for (const c of I.typed) {
+        this.cheatBuf.push(c);
+        if (this.cheatBuf.length > CHEAT_CODE.length) this.cheatBuf.shift();
+      }
+      if (this.cheatBuf.length === CHEAT_CODE.length && CHEAT_CODE.every((c, i) => this.cheatBuf[i] === c)) {
+        this.cheatBuf = [];
+        this.mode = 'testboss'; this.testIdx = 0;
+        BM.Audio.sfx('extra');
+      }
+    }
+
+    goMain() { this.mode = 'main'; this.cheatBuf = []; BM.Audio.sfx('move'); }
 
     // ---- 頁籤 ----
     tabCount() { return this.mode === 'howto' ? 2 : 3; }
@@ -103,9 +122,15 @@
         return { x: h.x + nx * cs - ny * sn, y: h.y + nx * sn + ny * cs };
       }), h.vx, 0, this.mode === 'main');
 
-      if (this.mode === 'main') { this.updateMain(P); return; }
+      if (this.mode === 'main') {
+        this.checkCheat();
+        if (this.mode !== 'main') return;   // 這一格剛好觸發隱藏指令，開啟了「測試 BOSS」
+        this.updateMain(P);
+        return;
+      }
       if (P.back) { this.goMain(); return; }
       if (this.mode === 'ranking') { if (P.confirm || I.click) this.goMain(); return; }
+      if (this.mode === 'testboss') { this.updateTestBoss(P); return; }
       this.updateTabbed(P);
     }
 
@@ -144,6 +169,24 @@
       } else if (settings && this.tab === SET_TAB.HISTORY) {
         for (let i = 0; i < 3; i++) if (inRect(c, this.subRect(i))) { this.setSub(i); return; }
       }
+    }
+
+    // ---- 「測試 BOSS」：開發用的捷徑，選一隻 BOSS 直接開始戰鬥（略過一般波）----
+    testBossY(i) { return TESTBOSS_Y.y0 + i * TESTBOSS_Y.gap; }
+    chooseTestBoss(i) {
+      BM.Audio.sfx('select');
+      BM.Game.setScene('play', { testBoss: i === 0 ? 'gangster' : 'kiryu' });
+    }
+    updateTestBoss(P) {
+      if (P.up) { this.testIdx = (this.testIdx + 1) % 2; BM.Audio.sfx('move'); }      // 只有 2 個選項，上下都是切換
+      if (P.down) { this.testIdx = (this.testIdx + 1) % 2; BM.Audio.sfx('move'); }
+      for (let i = 0; i < 2; i++) {
+        const hit = p => p && Math.abs(p.x - W / 2) < BTN.w / 2 && Math.abs(p.y - this.testBossY(i)) < 27;
+        if (I.moved && hit(I.pointer) && this.testIdx !== i) { this.testIdx = i; BM.Audio.sfx('move'); }
+        if (I.click && hit(I.click)) { this.chooseTestBoss(i); return; }
+      }
+      if (I.click && inRect(I.click, this.backRect())) { this.goMain(); return; }
+      if (P.confirm) this.chooseTestBoss(this.testIdx);
     }
 
     // ---- 「了解歷史」的分頁與長文字捲動 ----
@@ -210,6 +253,7 @@
       if (this.mode === 'main') this.drawMain(ctx, t);
       else if (this.mode === 'ranking') this.drawRanking(ctx, t);
       else if (this.mode === 'howto') this.drawHowTo(ctx, t);
+      else if (this.mode === 'testboss') this.drawTestBoss(ctx, t);
       else this.drawSettings(ctx, t);
       this.showFb(this.fbShow);
     }
@@ -317,6 +361,15 @@
       }
       if (!list.length) D.text(ctx, L('ranking.empty'), W / 2, 800, { size: 18, align: 'center', color: '#bcd0ff', maxW: 420 });
       D.button(ctx, L('nav.back'), BACK.x, BACK.y, BACK.w, BACK.h, false, t);
+    }
+
+    // ---- 「測試 BOSS」----
+    drawTestBoss(ctx, t) {
+      this.panel(ctx, L('test.title'));
+      D.text(ctx, L('test.hint'), W / 2, 190, { size: 15, align: 'center', color: '#9fb0e8', maxW: 420 });
+      const names = [L('boss.name'), L('boss2.name')];
+      for (let i = 0; i < 2; i++) D.button(ctx, names[i], W / 2, this.testBossY(i), BTN.w, 54, i === this.testIdx, t);
+      this.footer(ctx, t, 'test.keys', 'test.tap');
     }
 
     // ---- 操作說明：「操作」「敵機介紹」兩個頁籤 ----
