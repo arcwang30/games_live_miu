@@ -1,8 +1,8 @@
-// 主選單：開始遊戲 / 排行榜 / 操作說明 / 設定
+// 主選單：開始遊戲 / 排行榜 / 操作說明 / 設定 / 了解歷史
 //   操作說明：兩個頁籤 —「操作」「敵機介紹」
-//   設定：三個頁籤（由左至右）—「語言」「了解歷史」「CREDIT」，預設「語言」；
-//         「了解歷史」內含 3 個分頁：關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（前兩個內文之後補上；第三個有 LOGO、長文字與粉絲團連結按鈕）
-// 頁籤操作：← → 切換頁籤、（語言頁籤）↑ ↓ 選擇、（關於頁籤）↑ ↓ / 滾輪 / 拖曳捲動（捲到頭尾再按 = 換分頁）、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
+//   設定：三個頁籤（由左至右）—「語言」「音量」「CREDIT」，預設「語言」
+//   了解歷史（獨立的主選單項目，不在設定裡）：3 個分頁 —— 關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫（前兩個內文之後補上；第三個有 LOGO、長文字與粉絲團連結按鈕）
+// 頁籤操作：← → 切換頁籤、（語言 / 了解歷史頁籤）↑ ↓ 選擇或捲動、Esc / B 返回；觸控 / 滑鼠直接點頁籤與「返回」按鈕。
 //
 // 隱藏的「測試 BOSS」：不是選單上看得到的按鈕，在主選單畫面用鍵盤打出 CHEAT_CODE（見下方常數）就會開啟，
 // 開發用（直接跳到某一隻 BOSS 開戰，略過一般波），測試完 Esc / B 就能返回主選單。
@@ -10,22 +10,23 @@
   const C = BM.CONFIG, W = C.W, M = BM.M, D = BM.Draw, I = BM.Input;
   const L = (k, v) => BM.I18n.t(k, v);
 
-  const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings'];
-  const BTN = { w: 300, h: 54, y0: 596, gap: 66 };
+  const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings', 'menu.history'];
+  const BTN = { w: 300, h: 48, y0: 572, gap: 58 };
   const TESTBOSS_Y = { y0: 350, gap: 100 };   // 「測試 BOSS」頁的兩個 BOSS 選項
   const CHEAT_CODE = ['O', 'P', 'E', 'N'];    // 隱藏指令：在主選單依序按下 O P E N（跟輸入法 / 大小寫無關，讀的是實體鍵盤按鍵；刻意避開 W/A/S/D，不會跟選單上下移動衝突）
 
-  // 頁面（操作說明 / 設定 / 排行榜）的版面
+  // 頁面（操作說明 / 設定 / 排行榜 / 了解歷史）的版面
   const PANEL = { x: 30, y: 70, w: 480, h: 820 };
-  const TAB = { x: 50, w: 440, y: 186, h: 44 };          // 頁籤列
-  const SUB = { x: 50, w: 440, y: 268, h: 40 };          // 「關於」頁籤裡的分頁列
+  const TAB = { x: 50, w: 440, y: 186, h: 44 };          // 頁籤列（也給「了解歷史」的 3 個分頁用）
   const BACK = { x: W / 2, y: 846, w: 210, h: 50 };      // 返回按鈕
   const LANGS = [{ id: 'zh', label: '中文' }, { id: 'ja', label: '日本語' }, { id: 'en', label: 'English' }];
   const LANG_ROW = { y0: 330, gap: 84, w: 320, h: 58 };
+  const VOL_ROW = { y0: 340, gap: 130 };                 // 「音量」頁籤：音樂 / 音效 兩列
+  const VOL_BAR = { x0: 220, gap: 40, w: 28 };            // 每列 5 格音量條
   const FB_BTN = { y: 762, w: 300, h: 44 };              // 「關於Arc遊戲庫」頁的粉絲團按鈕
 
   // 設定頁面的頁籤順序（由左至右）；進入設定時預設停在第 0 個「語言」
-  const SET_TAB = { LANG: 0, HISTORY: 1, CREDIT: 2 };
+  const SET_TAB = { LANG: 0, VOLUME: 1, CREDIT: 2 };
 
   const inRect = (p, r) => p && p.x >= r.x && p.x <= r.x + r.w && p.y >= r.y && p.y <= r.y + r.h;
 
@@ -47,6 +48,7 @@
       }
       this.jet = new BM.JetFx();
       this.cheatBuf = [];           // 隱藏指令：主選單畫面按下的最近幾個字母（跟 CHEAT_CODE 比對）
+      this.volIdx = 0;              // 「音量」頁籤：0 = 音樂列、1 = 音效列
       BM.Audio.playMusic('menu');
     }
     exit() { this.showFb(false); }
@@ -68,7 +70,8 @@
       BM.Audio.sfx('select');
       if (i === 0) BM.Game.setScene('play');
       else {
-        this.mode = ['', 'ranking', 'howto', 'settings'][i]; this.tab = 0; this.sub = 0; this.scroll = 0; this.aboutH = 1e9;
+        this.mode = ['', 'ranking', 'howto', 'settings', 'history'][i];
+        this.tab = 0; this.sub = 0; this.scroll = 0; this.aboutH = 1e9; this.volIdx = 0;
         if (this.mode === 'ranking') BM.Storage.refresh();          // 進排行榜時重新取得雲端榜單
       }
     }
@@ -88,15 +91,25 @@
 
     goMain() { this.mode = 'main'; this.cheatBuf = []; BM.Audio.sfx('move'); }
 
-    // ---- 頁籤 ----
+    // ---- 頁籤（操作說明 2 個、設定 3 個）----
     tabCount() { return this.mode === 'howto' ? 2 : 3; }
     tabLabels() {
-      return this.mode === 'howto' ? [L('tab.controls'), L('tab.enemies')] : [L('tab.language'), L('tab.history'), L('tab.credit')];
+      return this.mode === 'howto' ? [L('tab.controls'), L('tab.enemies')] : [L('tab.language'), L('tab.volume'), L('tab.credit')];
     }
     tabRect(i, n) { const w = TAB.w / n; return { x: TAB.x + i * w, y: TAB.y - TAB.h / 2, w, h: TAB.h }; }
-    subRect(i) { const w = SUB.w / 3; return { x: SUB.x + i * w, y: SUB.y - SUB.h / 2, w, h: SUB.h }; }
     langRect(i) { return { x: W / 2 - LANG_ROW.w / 2, y: LANG_ROW.y0 + i * LANG_ROW.gap - LANG_ROW.h / 2, w: LANG_ROW.w, h: LANG_ROW.h }; }
     backRect() { return { x: BACK.x - BACK.w / 2, y: BACK.y - BACK.h / 2, w: BACK.w, h: BACK.h }; }
+    // 「音量」頁籤：音樂 / 音效 兩列，各自的資料與設定函式
+    volRows() {
+      return [
+        { label: L('vol.music'), val: BM.Audio.musicVol, set: n => BM.Audio.setMusicVol(n) },
+        { label: L('vol.sfx'), val: BM.Audio.sfxVol, set: n => BM.Audio.setSfxVol(n) }
+      ];
+    }
+    volBarRect(row, seg) {
+      const y = VOL_ROW.y0 + row * VOL_ROW.gap;
+      return { x: VOL_BAR.x0 + seg * VOL_BAR.gap, y: y - 16, w: VOL_BAR.w, h: 32 };
+    }
 
     setTab(i) { if (i !== this.tab) { this.tab = i; BM.Audio.sfx('move'); } }
     applyLang(i) {
@@ -131,6 +144,7 @@
       if (P.back) { this.goMain(); return; }
       if (this.mode === 'ranking') { if (P.confirm || I.click) this.goMain(); return; }
       if (this.mode === 'testboss') { this.updateTestBoss(P); return; }
+      if (this.mode === 'history') { this.updateHistory(P); return; }
       this.updateTabbed(P);
     }
 
@@ -156,8 +170,13 @@
         if (P.up) { this.langIdx = (this.langIdx + 2) % 3; BM.Audio.sfx('move'); }
         if (P.down) { this.langIdx = (this.langIdx + 1) % 3; BM.Audio.sfx('move'); }
         if (P.confirm) this.applyLang(this.langIdx);
-      } else if (settings && this.tab === SET_TAB.HISTORY) {       // 了解歷史：↑↓ / 滾輪 / 拖曳 捲動長文字，捲到頭尾再按一次 = 換分頁
-        this.updateAbout(P);
+      } else if (settings && this.tab === SET_TAB.VOLUME) {        // 音量：↑↓ 選音樂 / 音效、Enter 調整一格（5 之後回到 0）
+        if (P.up || P.down) { this.volIdx = 1 - this.volIdx; BM.Audio.sfx('move'); }
+        if (P.confirm) {
+          const row = this.volRows()[this.volIdx];
+          row.set((row.val + 1) % 6);
+          BM.Audio.sfx('select');
+        }
       }
 
       const c = I.click;
@@ -166,9 +185,23 @@
       for (let i = 0; i < n; i++) if (inRect(c, this.tabRect(i, n))) { this.setTab(i); return; }
       if (settings && this.tab === SET_TAB.LANG) {
         for (let i = 0; i < 3; i++) if (inRect(c, this.langRect(i))) { this.applyLang(i); return; }
-      } else if (settings && this.tab === SET_TAB.HISTORY) {
-        for (let i = 0; i < 3; i++) if (inRect(c, this.subRect(i))) { this.setSub(i); return; }
+      } else if (settings && this.tab === SET_TAB.VOLUME) {
+        const rows = this.volRows();
+        for (let r = 0; r < 2; r++) for (let s = 0; s < 5; s++) {
+          if (inRect(c, this.volBarRect(r, s))) { rows[r].set(s + 1); this.volIdx = r; BM.Audio.sfx('select'); return; }
+        }
       }
+    }
+
+    // ---- 「了解歷史」（獨立頁面，不在設定裡）：3 個分頁，← → 直接切換分頁 ----
+    updateHistory(P) {
+      if (P.left) this.setSub((this.sub + 2) % 3);
+      if (P.right) this.setSub((this.sub + 1) % 3);
+      this.updateAbout(P);                                          // ↑↓ / 滾輪 / 拖曳 捲動長文字，捲到頭尾再按一次 = 換分頁
+      const c = I.click;
+      if (!c) return;
+      if (inRect(c, this.backRect())) { this.goMain(); return; }
+      for (let i = 0; i < 3; i++) if (inRect(c, this.tabRect(i, 3))) { this.setSub(i); return; }
     }
 
     // ---- 「測試 BOSS」：開發用的捷徑，選一隻 BOSS 直接開始戰鬥（略過一般波）----
@@ -192,8 +225,9 @@
     // ---- 「了解歷史」的分頁與長文字捲動 ----
     setSub(i) { if (i !== this.sub) { this.sub = i; this.scroll = 0; this.aboutH = 1e9; BM.Audio.sfx('move'); } }   // aboutH 在下一次繪製前先當成「很長」，避免還沒量好高度就誤判到底而連跳分頁
 
-    // 文字的可視範圍（有粉絲團按鈕的「關於Arc遊戲庫」頁要留出按鈕的位置）
-    aboutCard() { return this.sub === 2 ? { y: 306, h: 418, y0: 362, y1: 712 } : { y: 306, h: 470, y0: 362, y1: 764 }; }
+    // 文字的可視範圍（有粉絲團按鈕的「關於Arc遊戲庫」頁要留出按鈕的位置）。
+    // 現在「了解歷史」是獨立頁面、只有一排頁籤（在 TAB 的位置），所以可視範圍比以前（巢狀在設定裡）多了不少空間
+    aboutCard() { return this.sub === 2 ? { y: 222, h: 502, y0: 234, y1: 712 } : { y: 222, h: 585, y0: 234, y1: 795 }; }
 
     updateAbout(P) {
       const A = this.aboutCard(), viewH = A.y1 - A.y0, max = Math.max(0, this.aboutH - viewH);
@@ -209,7 +243,7 @@
       if (I.key('Home')) d -= 1e6;
       d += I.wheel;                                                                              // 滑鼠滾輪
       const dp = I.downPos;
-      if (I.pointerDown && dp && dp.x > 50 && dp.x < 490 && dp.y > 306 && dp.y < A.y1 + 12) d += I.drag;   // 手指 / 滑鼠在文字區按住上下拖曳
+      if (I.pointerDown && dp && dp.x > 50 && dp.x < 490 && dp.y > A.y - 10 && dp.y < A.y1 + 12) d += I.drag;   // 手指 / 滑鼠在文字區按住上下拖曳
       this.scroll = M.clamp(this.scroll + d, 0, max);
       if (this.sub === 2 && P.confirm) this.openFan();                                           // Enter / 空白鍵 / 手把 A：開粉絲團
     }
@@ -248,12 +282,13 @@
     draw(ctx) {
       const t = this.t;
       BM.Background.draw(ctx, t);
-      this.fbShow = false;                                          // 粉絲團連結只在「關於Arc遊戲庫」頁顯示（drawAbout 會設為 true）
+      this.fbShow = false;                                          // 粉絲團連結只在「關於Arc遊戲庫」頁顯示（drawAboutBody 會設為 true）
 
       if (this.mode === 'main') this.drawMain(ctx, t);
       else if (this.mode === 'ranking') this.drawRanking(ctx, t);
       else if (this.mode === 'howto') this.drawHowTo(ctx, t);
       else if (this.mode === 'testboss') this.drawTestBoss(ctx, t);
+      else if (this.mode === 'history') this.drawHistory(ctx, t);
       else this.drawSettings(ctx, t);
       this.showFb(this.fbShow);
     }
@@ -418,14 +453,38 @@
       D.text(ctx, L('enemy.x2'), W / 2, 780, { size: 17, align: 'center', color: '#ffe27a', weight: '900', maxW: 420 });
     }
 
-    // ---- 設定：由左至右「語言」「了解歷史」「CREDIT」三個頁籤（預設停在「語言」）----
+    // ---- 設定：由左至右「語言」「音量」「CREDIT」三個頁籤（預設停在「語言」）----
     drawSettings(ctx, t) {
       this.panel(ctx, L('settings.title'));
       this.tabs(ctx, this.tabLabels(), this.tab, i => this.tabRect(i, 3), 15);
       if (this.tab === SET_TAB.LANG) this.drawLanguage(ctx, t);
-      else if (this.tab === SET_TAB.HISTORY) this.drawAbout(ctx, t);
+      else if (this.tab === SET_TAB.VOLUME) this.drawVolume(ctx, t);
       else this.drawCredit(ctx);
-      this.footer(ctx, t, this.tab === SET_TAB.LANG ? 'nav.keys.lang' : this.tab === SET_TAB.HISTORY ? 'nav.keys.history' : 'nav.keys', this.tab === SET_TAB.HISTORY ? 'nav.tap.history' : null);
+      this.footer(ctx, t, this.tab === SET_TAB.LANG ? 'nav.keys.lang' : this.tab === SET_TAB.VOLUME ? 'nav.keys.vol' : 'nav.keys', this.tab === SET_TAB.VOLUME ? 'nav.tap.vol' : null);
+    }
+
+    // 「音量」頁籤：音樂 / 音效 各一排 5 格音量條（0～5），↑↓ 選列、Enter 調整一格；也可以直接點某一格
+    drawVolume(ctx, t) {
+      const rows = this.volRows();
+      for (let r = 0; r < 2; r++) {
+        const row = rows[r], y = VOL_ROW.y0 + r * VOL_ROW.gap, on = r === this.volIdx;
+        D.text(ctx, row.label, 90, y, { size: 22, align: 'left', color: on ? '#ffd166' : '#dfe6ff', weight: '900', maxW: 120 });
+        for (let s = 0; s < 5; s++) {
+          const br = this.volBarRect(r, s), filled = s < row.val;
+          const h = 14 + s * 6;                                    // 由矮到高的音量條，像等化器
+          ctx.save();
+          if (filled) {
+            const g = ctx.createLinearGradient(0, br.y + br.h - h, 0, br.y + br.h);
+            g.addColorStop(0, '#ffd166'); g.addColorStop(1, '#ff9a48');
+            ctx.fillStyle = g;
+          } else ctx.fillStyle = 'rgba(255,255,255,0.14)';
+          D.roundRect(ctx, br.x, br.y + br.h - h, br.w, h, 5); ctx.fill();
+          if (on) { ctx.lineWidth = 2; ctx.strokeStyle = 'rgba(255,255,255,0.5)'; ctx.stroke(); }
+          ctx.restore();
+        }
+        D.text(ctx, row.val + ' / 5', VOL_BAR.x0 + 5 * VOL_BAR.gap + 24, y, { size: 18, align: 'left', color: '#9fb0e8', family: D.NUM, weight: '900' });
+      }
+      D.text(ctx, L('vol.hint'), W / 2, 630, { size: 16, align: 'center', color: '#9fb0e8', maxW: 400 });
     }
 
     drawCredit(ctx) {
@@ -487,18 +546,24 @@
       return (this.layout = { ck, lines, h: y + 6 });
     }
 
-    // 「了解歷史」的 3 個分頁。有內文的分頁自動斷行、可以上下捲動（↑↓ / 滾輪 / 拖曳）；「關於Arc遊戲庫」頁最上面是 LOGO，下方固定一顆粉絲團按鈕
-    drawAbout(ctx, t) {
+    // 「了解歷史」：獨立的主選單頁面（不在設定裡），3 個分頁 —— 關於射擊遊戲 / 概念結構 / 關於Arc遊戲庫
+    drawHistory(ctx, t) {
+      this.panel(ctx, L('tab.history'));
       const labels = [L('about.0'), L('about.1'), L('about.2')];
-      this.tabs(ctx, labels, this.sub, i => this.subRect(i), 14);
+      this.tabs(ctx, labels, this.sub, i => this.tabRect(i, 3), 15);
+      this.drawAboutBody(ctx, t);
+      this.footer(ctx, t, 'nav.keys.history', 'nav.tap.history');
+    }
+
+    // 分頁內容：有內文的分頁自動斷行、可以上下捲動（↑↓ / 滾輪 / 拖曳）；「關於Arc遊戲庫」頁最上面是 LOGO，下方固定一顆粉絲團按鈕
+    drawAboutBody(ctx, t) {
       const A = this.aboutCard(), arc = this.sub === 2;
       ctx.fillStyle = 'rgba(255,255,255,0.07)';
       D.roundRect(ctx, 50, A.y, 440, A.h, 18); ctx.fill();
       ctx.strokeStyle = 'rgba(255,255,255,0.14)'; ctx.lineWidth = 2; ctx.stroke();
-      D.text(ctx, labels[this.sub], W / 2, 336, { size: 26, align: 'center', color: '#ffd166', stroke: '#5b2a86', strokeW: 6, weight: '900', maxW: 400 });
       const bodyKey = 'about.body.' + this.sub;
       if (!BM.I18n.has(bodyKey)) {                                 // 還沒有內文：顯示「準備中」
-        D.text(ctx, L('about.soon'), W / 2, 540, { size: 22, align: 'center', color: '#8f9cc8', maxW: 360 });
+        D.text(ctx, L('about.soon'), W / 2, (A.y0 + A.y1) / 2, { size: 22, align: 'center', color: '#8f9cc8', maxW: 360 });
         this.aboutH = 0;
         return;
       }

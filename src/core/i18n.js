@@ -10,7 +10,7 @@
   const STR = {
     zh: {
       // 主選單
-      'menu.start': '開始遊戲', 'menu.ranking': '排行榜', 'menu.howto': '操作說明', 'menu.settings': '設定', 'menu.testboss': '測試 BOSS',
+      'menu.start': '開始遊戲', 'menu.ranking': '排行榜', 'menu.howto': '操作說明', 'menu.settings': '設定', 'menu.history': '了解歷史', 'menu.testboss': '測試 BOSS',
       'test.title': '測試 BOSS', 'test.hint': '選擇要挑戰的 BOSS，會直接開始戰鬥（略過一般波）',
       'test.keys': '↑ ↓ 選擇　Enter 確認　Esc / B 返回', 'test.tap': '點選 BOSS 開始',
       'hint.touch1': '點選按鈕開始　遊戲中按住畫面，戰機在手指上方跟隨',
@@ -41,6 +41,7 @@
       // 設定（三個頁籤，由左至右：語言 / 了解歷史 / CREDIT；「了解歷史」內含 3 個分頁 about.0~2）
       'settings.title': '設定', 'tab.credit': 'CREDIT', 'tab.language': '語言', 'tab.history': '了解歷史',
       'lang.hint': '選擇後立即套用',
+      'tab.volume': '音量', 'vol.music': '音樂', 'vol.sfx': '音效', 'vol.hint': '↑ ↓ 選擇音樂 / 音效　Enter 調整（0～5，5 之後回到 0）',
       'credit.planning': '企劃', 'credit.programming': '程式', 'credit.art': '美術', 'credit.music': '音樂', 'credit.thanks': '特別感謝',
       'about.0': '關於射擊遊戲', 'about.1': '概念結構', 'about.2': '關於Arc遊戲庫', 'about.soon': '（內容準備中）',
       // 要補「關於」三個分頁的內文：在這裡加上 'about.body.0'（關於射擊遊戲）、'about.body.1'（概念結構）、'about.body.2'（關於Arc遊戲庫），
@@ -124,6 +125,7 @@
       'nav.back': '返回',
       'nav.keys': '← → 切換頁籤　Esc / B 返回',
       'nav.keys.lang': '← → 切換頁籤　↑ ↓ 選擇　Enter 確認　Esc / B 返回',
+      'nav.keys.vol': '← → 切換頁籤　↑ ↓ 選擇　Enter 調整　Esc / B 返回', 'nav.tap.vol': '點選格子調整音量',
       'nav.keys.history': '← → 切換頁籤　↑ ↓ / 滾輪 捲動（到底再按 = 換分頁）　Esc / B 返回',
       'nav.tap': '點選頁籤切換',
       'nav.tap.history': '點選分頁　上下滑動閱讀',
@@ -178,7 +180,7 @@
     },
 
     ja: {
-      'menu.start': 'ゲーム開始', 'menu.ranking': 'ランキング', 'menu.howto': '操作説明', 'menu.settings': '設定', 'menu.testboss': 'ボステスト',
+      'menu.start': 'ゲーム開始', 'menu.ranking': 'ランキング', 'menu.howto': '操作説明', 'menu.settings': '設定', 'menu.history': '歴史を知る', 'menu.testboss': 'ボステスト',
       'test.title': 'ボステスト', 'test.hint': '挑戦するボスを選ぶと、すぐに戦闘が始まります（通常波はスキップ）',
       'test.keys': '↑ ↓ 選択　Enter 決定　Esc / B 戻る', 'test.tap': 'ボスをタップして開始',
       'hint.touch1': 'ボタンをタップして開始　プレイ中は画面を押すと機体が指の上を追従',
@@ -206,6 +208,7 @@
       'enemy.4.name': '金必ネズミ', 'enemy.4.desc': 'レア！画面上部を漂い、時間が来ると飛び去る。11発当てると爆発：高得点＋残機1', 'gold.appear': '金必ネズミ出現！',
       'settings.title': '設定', 'tab.credit': 'CREDIT', 'tab.language': '言語', 'tab.history': '歴史を知る',
       'lang.hint': '選ぶとすぐに切り替わります',
+      'tab.volume': '音量', 'vol.music': '音楽', 'vol.sfx': '効果音', 'vol.hint': '↑ ↓ 音楽 / 効果音を選択　Enter で調整（0～5、5の次は0に戻る）',
       'credit.planning': '企画', 'credit.programming': 'プログラム', 'credit.art': 'アート', 'credit.music': '音楽', 'credit.thanks': 'スペシャルサンクス',
       'about.0': '射撃ゲームについて', 'about.1': 'コンセプト構成', 'about.2': 'Arcゲームライブラリ', 'about.soon': '（準備中）',
       // 「射撃ゲームについて」内文（日文）。スタイル記号は下の「コンセプト構成」と同じ
@@ -287,6 +290,7 @@
       'nav.back': '戻る',
       'nav.keys': '← → タブ切替　Esc / B 戻る',
       'nav.keys.lang': '← → タブ切替　↑ ↓ 選択　Enter 決定　Esc / B 戻る',
+      'nav.keys.vol': '← → タブ切替　↑ ↓ 選択　Enter 調整　Esc / B 戻る', 'nav.tap.vol': 'マスをタップして調整',
       'nav.keys.history': '← → タブ切替　↑ ↓ / ホイール スクロール（端でさらに = ページ切替）　Esc / B 戻る',
       'nav.tap': 'タブをタップして切り替え',
       'nav.tap.history': 'ページをタップ・上下にスワイプで読む',
@@ -338,7 +342,7 @@
     },
 
     en: {
-      'menu.start': 'START GAME', 'menu.ranking': 'RANKING', 'menu.howto': 'HOW TO PLAY', 'menu.settings': 'SETTINGS', 'menu.testboss': 'Boss Test',
+      'menu.start': 'START GAME', 'menu.ranking': 'RANKING', 'menu.howto': 'HOW TO PLAY', 'menu.settings': 'SETTINGS', 'menu.history': 'Learn History', 'menu.testboss': 'Boss Test',
       'test.title': 'Boss Test', 'test.hint': 'Pick a boss to fight immediately (skips the regular waves)',
       'test.keys': 'Up/Down select   Enter confirm   Esc/B back', 'test.tap': 'Tap a boss to start',
       'hint.touch1': 'Tap to start · Hold the screen: ship follows your finger',
@@ -366,6 +370,7 @@
       'enemy.4.name': 'Jackpot Mouse', 'enemy.4.desc': 'Rare! Hovers at the top, then flies off. Takes 11 hits: big score + 1 extra ship', 'gold.appear': 'Jackpot Mouse!',
       'settings.title': 'SETTINGS', 'tab.credit': 'CREDIT', 'tab.language': 'Language', 'tab.history': 'Learn History',
       'lang.hint': 'Applied immediately',
+      'tab.volume': 'Volume', 'vol.music': 'Music', 'vol.sfx': 'SFX', 'vol.hint': 'Up/Down select Music / SFX   Enter to adjust (0-5, wraps back to 0)',
       'credit.planning': 'Planning', 'credit.programming': 'Programming', 'credit.art': 'Art', 'credit.music': 'Music', 'credit.thanks': 'Special Thanks',
       'about.0': 'About Shooting Games', 'about.1': 'Concept Structure', 'about.2': 'About Arc Games', 'about.soon': '(Coming soon)',
       // "About Shooting Games" body text (English). Same style markers as "Concept Structure" below. Plain apostrophes only (see the note further down)
@@ -447,6 +452,7 @@
       'nav.back': 'Back',
       'nav.keys': '← → Switch tab　Esc / B: Back',
       'nav.keys.lang': '← → Tab　↑ ↓ Select　Enter: OK　Esc / B: Back',
+      'nav.keys.vol': '← → Tab　↑ ↓ Select　Enter: adjust　Esc / B: Back', 'nav.tap.vol': 'Tap a bar to adjust',
       'nav.keys.history': '← → Tab　↑ ↓ / Wheel: scroll (at the end = next page)　Esc / B: Back',
       'nav.tap': 'Tap a tab to switch',
       'nav.tap.history': 'Tap a page · swipe up / down to read',

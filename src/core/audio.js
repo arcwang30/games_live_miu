@@ -3,8 +3,15 @@
   let ctx = null, master = null, sfxBus = null, musBus = null, noiseBuf = null;
   let unlocked = false, muted = false;
   let wanted = null, current = null, timer = null, step = 0, nextTime = 0;
+  let musicVol = 5, sfxVol = 5;      // 音量：0~5 共 6 段，預設滿格（5）；跟 M 鍵的整體靜音分開，各自存檔
 
   try { muted = localStorage.getItem('bulletMeow.muted') === '1'; } catch (e) { /* ignore */ }
+  try {
+    const mv = parseInt(localStorage.getItem('bulletMeow.musicVol'), 10);
+    if (mv >= 0 && mv <= 5) musicVol = mv;
+    const sv = parseInt(localStorage.getItem('bulletMeow.sfxVol'), 10);
+    if (sv >= 0 && sv <= 5) sfxVol = sv;
+  } catch (e) { /* ignore */ }
 
   const mtof = m => 440 * Math.pow(2, (m - 69) / 12);
 
@@ -14,8 +21,8 @@
     master = ctx.createGain();
     master.gain.value = gain;
     master.connect(ctx.destination);
-    sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9; sfxBus.connect(master);
-    musBus = ctx.createGain(); musBus.gain.value = 0.7;
+    sfxBus = ctx.createGain(); sfxBus.gain.value = 0.9 * sfxVol / 5; sfxBus.connect(master);
+    musBus = ctx.createGain(); musBus.gain.value = 0.7 * musicVol / 5;
     const comp = ctx.createDynamicsCompressor();
     comp.threshold.value = -16; comp.knee.value = 14; comp.ratio.value = 4; comp.attack.value = 0.005; comp.release.value = 0.2;
     musBus.connect(comp); comp.connect(master);
@@ -515,6 +522,20 @@
       return muted;
     },
     get muted() { return muted; },
+
+    // 音量：0~5 共 6 段。跟 toggleMute 的整體靜音分開——這裡是音樂 / 音效各自的相對音量，M 鍵靜音時這兩個設定還是會保留
+    setMusicVol(n) {
+      musicVol = Math.max(0, Math.min(5, n | 0));
+      try { localStorage.setItem('bulletMeow.musicVol', musicVol); } catch (e) { /* ignore */ }
+      if (musBus) musBus.gain.value = 0.7 * musicVol / 5;
+    },
+    setSfxVol(n) {
+      sfxVol = Math.max(0, Math.min(5, n | 0));
+      try { localStorage.setItem('bulletMeow.sfxVol', sfxVol); } catch (e) { /* ignore */ }
+      if (sfxBus) sfxBus.gain.value = 0.9 * sfxVol / 5;
+    },
+    get musicVol() { return musicVol; },
+    get sfxVol() { return sfxVol; },
     get tracks() { return TRACKS; },                    // 測試用：曲子資料（可以暫時關掉某個聲部來單獨試聽 / 量音量）
 
     // 測試 / 試聽用：把一首曲子的第 pass 遍（0~3）離線合成成 AudioBuffer（不會出聲，也不影響正在播放的音樂）。
