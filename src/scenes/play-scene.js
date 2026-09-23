@@ -455,13 +455,13 @@
         if (dx * dx + dy * dy < r * r || bo.meleeHit(p)) { this.killPlayer(); return; }
       }
 
-      // 敵方子彈 → 玩家（b.slowTime 有值的是桐生爹鼠「極！」射出的字：碰到只會緩速，不會扣命，見 boss.js 的 updateShout）
+      // 敵方子彈 → 玩家（b.stunTime 有值的是桐生爹鼠「極！」射出的字：碰到只會麻痺，不會扣命，見 boss.js 的 updateShout）
       for (const b of this.eBullets) {
         if (b.dead || b.harmless) continue;
         const dx = b.x - p.x, dy = b.y - p.y, r = p.radius + b.r;
         if (dx * dx + dy * dy < r * r) {
           b.dead = true;
-          if (b.slowTime) { p.applySlow(b.slowTime); this.sfx('slowHit'); continue; }
+          if (b.stunTime) { p.applyStun(b.stunTime); this.sfx('stunHit'); continue; }
           this.killPlayer(); return;
         }
       }

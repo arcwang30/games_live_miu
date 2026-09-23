@@ -179,7 +179,7 @@
     punch()     { noise({ d: 0.06, v: 0.15, f: 500, f2: 90 }); tone({ type: 'square', f: 130, f2: 60, d: 0.05, v: 0.1 }); },   // 一拳
     shout()     { noise({ d: 0.35, v: 0.22, f: 700, f2: 2200 }); tone({ type: 'sawtooth', f: 90, f2: 220, d: 0.4, v: 0.16 }); },   // 「極！」怒喝（蓄力時）
     gokuThrow() { tone({ type: 'square', f: 720, f2: 1100, d: 0.1, v: 0.06 }); tone({ type: 'sine', f: 1400, d: 0.12, v: 0.04, delay: 0.02 }); },   // 「極」字射出
-    slowHit()   { tone({ type: 'triangle', f: 500, f2: 140, d: 0.3, v: 0.1 }); },   // 玩家被「極！」擊中緩速
+    stunHit()   { tone({ type: 'square', f: 900, f2: 220, d: 0.14, v: 0.12 }); tone({ type: 'sawtooth', f: 70, f2: 35, d: 0.2, v: 0.08, delay: 0.02 }); },   // 玩家被「極！」擊中麻痺：短促電擊音
 
     // ---- BOSS：狠蘭達鼠 ----
     bellRing()  { tone({ type: 'sine', f: 1600, f2: 1500, d: 0.32, v: 0.08 }); tone({ type: 'sine', f: 2400, f2: 2260, d: 0.3, v: 0.05, delay: 0.01 }); tone({ type: 'triangle', f: 800, f2: 760, d: 0.3, v: 0.06 }); }   // 法鈴：清亮鈴聲

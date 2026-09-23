@@ -79,8 +79,8 @@
       this.level = level;
       this.kind = kind === 'kiryu' ? 'kiryu' : kind === 'asura' ? 'asura' : 'gangster';
       const pos = this.posInRound, rb = this.roundBonus;
-      this.maxHp = Math.min(B.hpMax + rb * 60, B.hpBase + B.hpPerLevel * (pos - 1) + rb * 60);
-      if (this.kind === 'asura') this.maxHp = Math.min(560 + rb * 40, Math.round(this.maxHp * B3.hpMul));   // 最終 BOSS：血量在共用曲線上再加成，是三隻裡最硬的
+      this.maxHp = Math.min(B.hpMax + rb * 48, B.hpBase + B.hpPerLevel * (pos - 1) + rb * 48);
+      if (this.kind === 'asura') this.maxHp = Math.min(450 + rb * 32, Math.round(this.maxHp * B3.hpMul));   // 最終 BOSS：血量在共用曲線上再加成，是三隻裡最硬的
       this.hp = this.maxHp;
       this.ghost = this.maxHp;          // 血條殘影
       this.x = W / 2; this.y = -180;
@@ -174,7 +174,7 @@
         case 'punch':  this.a = { stage: 'approach', t: 0, n: 0, total: 4 + this.phase * 2, timer: 0, jab: false, jabT: 0 }; break;               // 6/8/10 拳
         case 'cone':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: this.phase, pending: [] }; break;   // 1/2/3 把，原本 2/3/4 太密
         case 'shout':  this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 14 + this.phase * 4, ang: Math.random() * M.TAU }; w.sfx('shout'); break;  // 18/22/26 發，繞著 BOSS 轉出螺旋
-        case 'blade':   this.a = { stage: 'wind', t: 0, volley: 0, timer: 0, total: 2 + this.phase }; break;                              // 3/4/5 輪雙重十字斬（每輪的光刃數在 fireBlade() 依出場次數調整）
+        case 'blade':   this.a = { stage: 'wind', t: 0, volley: 0, timer: 0, total: 1 + this.phase }; break;                              // 2/3/4 輪雙重十字斬（使用者反應第 15 波密度太高難閃，減量；每輪的光刃數在 fireBlade() 依出場次數調整）
         case 'trident': this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 1 + this.phase + this.asuraTier }; break;             // 2/3/4 組（第一次出場刻意減量），之後每次出場再 +1 組（最多 +3）
         case 'bell':    this.a = { stage: 'wind', t: 0, rung: 0, timer: 0, total: B3.bellRings + this.phase - 1 + this.asuraTier }; w.sfx('bellRing'); break;   // 2/3/4 圈（第一次出場刻意減量），之後每次出場再 +1 圈（最多 +3）
         case 'wheel':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: this.phase + Math.min(2, this.asuraTier) }; break;    // 1/2/3 個法輪，之後每次出場再 +1（最多 +2，法輪本來就難閃不宜加太多）
@@ -518,7 +518,7 @@
         a.timer -= dt;
         if (a.timer <= 0 && a.thrown < a.total) {
           const b = w.fireBullet(mx, my, a.ang, K.speed * this.bm, 'goku');
-          if (b) b.slowTime = K.slowTime;         // 標記這發子彈「打中只緩速、不扣命」（collide() 會檢查這個欄位）
+          if (b) b.stunTime = K.stunTime;         // 標記這發子彈「打中只麻痺、不扣命」（collide() 會檢查這個欄位）
           w.sfx('gokuThrow');
           a.ang += K.spiralStep;                  // 下一發轉一個角度，疊出螺旋
           a.thrown++;
@@ -542,13 +542,13 @@
         if (a.timer <= 0 && a.volley < a.total) {
           this.fireBlade(w, a.volley);
           a.volley++;
-          a.timer = 0.32 / this.spd;
+          a.timer = 0.38 / this.spd;                    // 兩輪之間的間隔拉長一點（原 0.32），多給一點反應時間
           if (a.volley >= a.total) { a.stage = 'end'; a.t = 0; }
         }
       } else if (a.t >= 0.4 / this.spd) this.toIdle();
     }
     fireBlade(w, volley) {
-      const count = (this.phase >= 2 ? 8 : 6) + this.asuraTier, span = B3.bladeSpan;   // 第一次出場刻意減量（原本 8/11），之後每次出場再 +1 發（最多 +3）
+      const count = (this.phase >= 2 ? 7 : 5) + this.asuraTier, span = B3.bladeSpan;   // 使用者反應第 15 波密度太高難閃，再減量（原本 8/11 →第一版調降為 6/8 → 這次再降為 5/7）；之後每次出場再 +1 發（最多 +3）
       const base = M.clamp(Math.atan2(this.py - this.y, this.px - this.x), PI / 2 - 0.7, PI / 2 + 0.7);
       const center = base + (volley % 2 === 0 ? -0.32 : 0.32);         // 兩輪分別往左右偏，疊起來形成十字交錯
       const step = span / (count - 1), sp = B3.bladeSpeed * this.bm;
@@ -624,11 +624,19 @@
         }
       } else if (a.t >= 0.4 / this.spd) this.toIdle();
     }
+    // 迴旋弧線：不是直接瞄準後亂轉（那樣角速度不夠精準時，飛到玩家那層樓之前早就轉到別的方向去了，幾乎打不到人）。
+    // 改成「刻意偏出去再彎回來」的香蕉球：先朝瞄準角左右偏 wheelSpread 弧度射出，角速度用「切線-弦」幾何關係反推
+    // （等速率繞圓弧飛行時，切線與弦的夾角＝弧心角的一半，所以繞圓半徑 R = 距離 ÷ (2×sin(偏移角))，角速度 = 2×速度×sin(偏移角) ÷ 距離），
+    // 這樣整條弧線精準地從發射點繞回瞄準點（用模擬驗證過落點誤差 <5px）：飛行途中會明顯看到它轉彎、有空間閃，但若不躲確實會被彎回來的弧線打中。
     fireWheel(w, idx, total) {
       const p = w.player, ox = (idx - (total - 1) / 2) * 44;
-      const ang = Math.atan2(p.y - this.y, (p.x + ox) - this.x);
-      const b = w.fireBullet(this.x + ox, this.y + 40, ang, B3.wheelSpeed * this.bm, 'wheel');
-      if (b) b.turn = (idx % 2 === 0 ? 1 : -1) * B3.wheelTurn * this.bm;   // 交替左右迴旋，飛行軌跡會彎
+      const hx = this.x + ox, hy = this.y + 40;
+      const baseAng = Math.atan2(p.y - hy, p.x - hx);
+      const dir = idx % 2 === 0 ? 1 : -1;                     // 交替左右偏出去，讓多個法輪交叉
+      const dist = Math.max(60, Math.hypot(p.x - hx, p.y - hy));
+      const sp = B3.wheelSpeed * this.bm;
+      const b = w.fireBullet(hx, hy, baseAng + dir * B3.wheelSpread, sp, 'wheel');
+      if (b) b.turn = -dir * (2 * sp * Math.sin(B3.wheelSpread) / dist);
       w.sfx('lock');
     }
 
