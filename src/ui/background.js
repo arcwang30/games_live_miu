@@ -123,6 +123,7 @@
       cur = Object.assign({}, PALETTES.menu);
       phaseName = phaseKey = 'menu';
       tk = 1;
+      this.moonAlphaOverride = null;
     },
 
     // ---- 晝夜 ----
@@ -156,6 +157,11 @@
     // ---- 起司月亮的狀態：shake=進場前抖動（0/1）、glow=正在噴出老鼠時發亮（會平滑過渡）----
     moonShake: 0, moonGlow: 0, moonGlowTarget: 0,
     moon(shake, glow) { this.moonShake = shake; this.moonGlowTarget = glow; },
+
+    // 起司星球亮度覆蓋：null = 用目前時段調色盤的亮度（平常狀態）；否則用這個值（0~1）取代，
+    // 給狠蘭達鼠擊敗後的謝幕演出用（星球爆炸消失、再淡入重新出現，見 play-scene.js 的 updateFinale）
+    moonAlphaOverride: null,
+    setMoonAlpha(a) { this.moonAlphaOverride = a; },
 
     update(dt) {
       this.moonGlow += (this.moonGlowTarget - this.moonGlow) * Math.min(1, 6 * dt);
@@ -277,7 +283,7 @@
       }
 
       // 3. 太陽、起司月亮
-      this.drawMoon(ctx, t, cur.moonA);
+      this.drawMoon(ctx, t, this.moonAlphaOverride === null ? cur.moonA : this.moonAlphaOverride);
 
       // 4. 雲（白 / 暖 / 冷三種顏色依權重混合）
       const tints = [['', cur.tWhite], ['w', cur.tWarm], ['c', cur.tCool]];

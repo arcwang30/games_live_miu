@@ -436,6 +436,118 @@
     }
   }
 
+  // ---------- BOSS：狠蘭達鼠（阿修羅造型，四臂法師，最終 BOSS）----------
+  // 跟前兩隻 BOSS 刻意做出區別：四隻手臂各持一種法器（劍 / 戟 / 法鈴 / 法輪，對應四種攻擊）、
+  // 身穿紫金法袍、赤腳、額頭有第三隻眼、頭戴火焰狀金冠；沒有噴射背包也沒有靴子，改成腳下浮著一圈發光法陣（在 boss.js 的 drawAura 畫）。
+  // face: 'normal' 閉目蓄勢 / 'angry' 第三眼睜開、攻擊中 / 'dead' 被打趴（暈眩）
+  function drawBoss3(g, face) {
+    const OUT = '#241428', FUR = '#9c4a3c', ROBE = '#4b2066', ROBE2 = '#5e2b7d', GOLD = '#e8b23d', PAW = '#c9a58a';
+    const RR = BM.Draw.roundRect;
+    const spike = (bx, by, tx, ty, w, col) => {
+      const dx = tx - bx, dy = ty - by, len = Math.hypot(dx, dy) || 1, nx = -dy / len * w, ny = dx / len * w;
+      poly(g, [[bx - nx, by - ny], [bx + nx, by + ny], [tx, ty]], col, OUT, 1.4);
+    };
+
+    for (const s of [-1, 1]) {                                        // 赤腳
+      ell(g, s * 22, 92, 15, 10, PAW, OUT, 2.2);
+      for (let k = -1; k <= 1; k++) ell(g, s * 22 + k * 7, 84, 3.2, 5, PAW, OUT, 1.1);
+    }
+    poly(g, [[-16, 50], [16, 50], [36, 90], [-36, 90]], ROBE, OUT, 2.6);   // 下擺法袍（喇叭狀）
+    line(g, -36, 90, 36, 90, GOLD, 3);                                    // 金色滾邊
+    line(g, -20, 66, 20, 70, 'rgba(232,178,61,0.5)', 2);
+
+    for (const s of [-1, 1]) {                                        // 下層手臂（法鈴 / 法輪）
+      ell(g, s * 44, 56, 13, 20, ROBE2, OUT, 2.3);
+      ell(g, s * 80, 74, 11, 11, PAW, OUT, 2);
+    }
+    g.save(); g.translate(84, 74);                                    // 右下手：法鈴
+    poly(g, [[-9, -3], [9, -3], [7, 11], [-7, 11]], GOLD, OUT, 1.8);
+    ell(g, 0, -7, 3, 3, GOLD, OUT, 1);
+    g.restore();
+    g.save(); g.translate(-84, 74);                                   // 左下手：法輪
+    ell(g, 0, 0, 13, 13, GOLD, OUT, 2);
+    for (let a = 0; a < 8; a++) { const an = a / 8 * TAU; line(g, Math.cos(an) * 5, Math.sin(an) * 5, Math.cos(an) * 13, Math.sin(an) * 13, OUT, 1.6); }
+    ell(g, 0, 0, 4, 4, '#3a2a10');
+    g.restore();
+
+    ell(g, 0, 28, 50, 34, ROBE, OUT, 3);                              // 胸口法袍
+    line(g, -28, 8, 18, 50, GOLD, 4);                                 // 斜披金帶
+    RR(g, -22, 48, 44, 10, 5); g.fillStyle = GOLD; g.fill(); g.lineWidth = 1.8; g.strokeStyle = OUT; g.stroke();   // 腰帶
+    RR(g, -8, 49, 16, 8, 3); g.fillStyle = '#8a1f3a'; g.fill(); g.stroke();                                        // 腰帶飾
+
+    for (const s of [-1, 1]) {                                        // 上層手臂（劍 / 戟）
+      ell(g, s * 54, 16, 17, 15, ROBE2, OUT, 2.6);
+      ell(g, s * 78, -6, 12, 18, ROBE2, OUT, 2.3);
+      ell(g, s * 92, -22, 10, 10, PAW, OUT, 2);
+    }
+    g.save(); g.translate(92, -22); g.rotate(-0.5);                   // 右上手：劍
+    poly(g, [[-4, 20], [4, 20], [2, -38], [-2, -38]], '#dbe9f6', OUT, 1.8);
+    RR(g, -7, 15, 14, 10, 3); g.fillStyle = GOLD; g.fill(); g.lineWidth = 1.6; g.strokeStyle = OUT; g.stroke();
+    g.restore();
+    g.save(); g.translate(-92, -22); g.rotate(0.5);                   // 左上手：三叉戟
+    line(g, 0, 20, 0, -30, '#3a3040', 5);
+    for (const dx of [-9, 0, 9]) line(g, dx * 0.3, -30, dx, -48, '#dbe9f6', 3.4);
+    g.restore();
+
+    g.beginPath(); g.ellipse(0, 0, 42, 12, 0, 0, TAU);                // 金色法領
+    g.lineWidth = 8; g.strokeStyle = GOLD; g.stroke();
+    g.lineWidth = 1.6; g.strokeStyle = OUT; g.stroke();
+
+    for (const s of [-1, 1]) {                                        // 耳朵
+      ell(g, s * 44, -72, 19, 19, FUR, OUT, 2.5);
+      ell(g, s * 44, -72, 10, 10, '#e0b8a8');
+    }
+    ell(g, 0, -34, 44, 40, FUR, OUT, 3);                              // 頭
+    ell(g, 0, -16, 24, 16, '#e6c9b8', OUT, 2);                        // 嘴套
+    ell(g, 0, -23, 6.5, 5, '#4a1a12', OUT, 1.5);                      // 鼻子
+    for (const s of [-1, 1]) {                                        // 鬍鬚
+      line(g, s * 15, -16, s * 46, -22, 'rgba(36,20,40,0.8)', 1.4);
+      line(g, s * 15, -12, s * 46, -9, 'rgba(36,20,40,0.8)', 1.4);
+    }
+
+    // ---- 火焰狀金冠 ----
+    const CROWN = [[-30, -60, -46, -92, 7], [-14, -70, -18, -104, 6], [0, -74, 0, -114, 7], [14, -70, 18, -104, 6], [30, -60, 46, -92, 7]];
+    for (const c of CROWN) spike(c[0], c[1], c[2], c[3], c[4], GOLD);
+    ell(g, 0, -68, 6, 6, '#ff4060', OUT, 1.4);                        // 冠上寶石
+
+    if (face === 'dead') {
+      // 被打趴：暈眩的螺旋眼、第三眼閉著、扁嘴
+      for (const s of [-1, 1]) {
+        ell(g, s * 20, -42, 10, 10, '#fff', OUT, 1.8);
+        g.save(); g.translate(s * 20, -42); g.rotate(s * 0.4);
+        g.beginPath();
+        for (let a = 0; a < 10; a++) { const r = a * 0.7, th = a * 1.3; g.lineTo(Math.cos(th) * r, Math.sin(th) * r); }
+        g.strokeStyle = OUT; g.lineWidth = 1.6; g.stroke();
+        g.restore();
+      }
+      line(g, -3, -55, 3, -55, OUT, 2.2);
+      line(g, 6, -58, 34, -56, OUT, 4.2); line(g, -34, -56, -6, -58, OUT, 4.2);
+      line(g, -13, -6, 13, -7, OUT, 3);
+      line(g, -13, -6, -17, -2, OUT, 2.4); line(g, 13, -7, 17, -3, OUT, 2.4);
+    } else {
+      const angry = face === 'angry';
+      for (const s of [-1, 1]) {
+        ell(g, s * 20, -42, angry ? 11 : 9, angry ? 11 : 7, '#fff', OUT, 1.8);
+        ell(g, s * 20, -41, angry ? 5.6 : 4.2, angry ? 5.6 : 4.2, '#3a0a1a');
+        ell(g, s * 18.5, -44.5, 1.4, 1.4, '#fff');
+      }
+      if (angry) {                                                    // 第三眼睜開發光 + 怒眉 + 怒吼
+        ell(g, 0, -54, 5, 7, '#ff4060', OUT, 1.4);
+        ell(g, 0, -54, 2, 3, '#ffe0e8');
+        line(g, 5, -55, 35, -66, OUT, 5.2); line(g, -35, -66, -5, -55, OUT, 5.2);
+        ell(g, 0, -6, 17, 10.5, '#3a1020', OUT, 2);
+        poly(g, [[-10, -14], [-5, -14], [-7.5, -7]], '#fff');
+        poly(g, [[10, -14], [5, -14], [7.5, -7]], '#fff');
+        ell(g, 0, -2, 8, 4.4, '#ff6b86');
+      } else {                                                         // 第三眼閉著、平靜蓄勢
+        line(g, -3, -55, 3, -55, OUT, 2.2);
+        line(g, 6, -60, 34, -50, OUT, 4.8); line(g, -34, -48, -8, -58, OUT, 4.4);
+        g.beginPath(); g.moveTo(-15, -8); g.quadraticCurveTo(0, 0, 17, -11);
+        g.lineWidth = 3; g.strokeStyle = OUT; g.stroke();
+      }
+    }
+  }
+
   function drawKnife(g) {                // 敵方子彈：小刀光波（斬擊 / 三角錐攻擊共用）；尖端朝 +x，配合 EnemyBullet 用飛行角度當 rot
     g.save();
     g.shadowColor = 'rgba(140,220,255,0.9)'; g.shadowBlur = 6;
@@ -480,6 +592,46 @@
     g.restore();
   }
 
+  function drawBlade(g) {                // 敵方子彈：狠蘭達鼠揮劍射出的紫色光刃；尖端朝 +x
+    g.save();
+    g.shadowColor = 'rgba(190,120,255,0.9)'; g.shadowBlur = 8;
+    const gr = g.createLinearGradient(-8, 0, 12, 0);
+    gr.addColorStop(0, 'rgba(190,120,255,0.15)'); gr.addColorStop(1, '#f0e0ff');
+    poly(g, [[-8, 0], [4, -3.5], [12, 0], [4, 3.5]], gr, '#3a1a52', 1.6);
+    g.shadowBlur = 0;
+    g.strokeStyle = 'rgba(255,255,255,0.85)'; g.lineWidth = 1;
+    g.beginPath(); g.moveTo(-4, 0); g.lineTo(8, 0); g.stroke();
+    g.restore();
+  }
+
+  function drawTrident(g) {              // 敵方子彈：三叉戟貫穿的尖端；尖端朝 +x
+    g.save();
+    g.shadowColor = 'rgba(255,200,120,0.75)'; g.shadowBlur = 6;
+    poly(g, [[-9, 0], [7, -3], [10, 0], [7, 3]], '#e8d8c0', '#4a2a10', 1.4);
+    g.shadowBlur = 0;
+    g.strokeStyle = '#8a5a2a'; g.lineWidth = 2.2;
+    g.beginPath(); g.moveTo(-9, 0); g.lineTo(-1, 0); g.stroke();
+    g.restore();
+  }
+
+  function drawWard(g) {                 // 敵方子彈：法鈴敲出的音波珠（環狀齊射用，不需要朝向飛行角度）
+    const gr = g.createRadialGradient(0, 0, 0, 0, 0, 8);
+    gr.addColorStop(0, '#fff6d8'); gr.addColorStop(0.55, '#e8b23d'); gr.addColorStop(1, 'rgba(139,60,150,0)');
+    g.fillStyle = gr; g.beginPath(); g.arc(0, 0, 8, 0, TAU); g.fill();
+    g.strokeStyle = 'rgba(75,32,102,0.8)'; g.lineWidth = 1.6;
+    g.beginPath(); g.arc(0, 0, 5.5, 0, TAU); g.stroke();
+  }
+
+  function drawWheel(g) {                // 敵方子彈：法輪，持續自轉（EnemyBullet 用 this.spin 當 rot，不看飛行角度）
+    g.save();
+    g.shadowColor = 'rgba(232,178,61,0.8)'; g.shadowBlur = 8;
+    ell(g, 0, 0, 12, 12, '#e8b23d', '#4a2a10', 2);
+    g.shadowBlur = 0;
+    for (let a = 0; a < 8; a++) { const an = a / 8 * TAU; line(g, Math.cos(an) * 4, Math.sin(an) * 4, Math.cos(an) * 12, Math.sin(an) * 12, '#4a2a10', 1.6); }
+    ell(g, 0, 0, 4, 4, '#3a2a10');
+    g.restore();
+  }
+
   function drawOrb(g) {                  // 敵方子彈：橘紅光球
     const gr = g.createRadialGradient(0, 0, 0, 0, 0, 9);
     gr.addColorStop(0, '#ffffff');
@@ -519,11 +671,17 @@
       make('knife', 22, 22, drawKnife);
       make('moon', 220, 220, drawMoon);
       make('goku', 100, 100, drawGoku);
+      make('blade', 24, 24, drawBlade);
+      make('trident', 22, 22, drawTrident);
+      make('ward', 18, 18, drawWard);
+      make('wheel', 26, 26, drawWheel);
       for (const f of ['normal', 'angry', 'dead']) {
         make('boss_' + f, 250, 250, g => drawBoss(g, f));
         makeFlash('boss_' + f);
         make('kiryu_' + f, 250, 250, g => drawBoss2(g, f));
         makeFlash('kiryu_' + f);
+        make('asura_' + f, 250, 250, g => drawBoss3(g, f));
+        makeFlash('asura_' + f);
       }
       for (let i = 0; i < 3; i++) {
         make('cloud' + i, 150, 70, g => drawCloud(g, i));       // 白色（白天 / 主選單）

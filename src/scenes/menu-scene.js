@@ -12,7 +12,8 @@
 
   const MAIN = ['menu.start', 'menu.ranking', 'menu.howto', 'menu.settings', 'menu.history'];
   const BTN = { w: 300, h: 48, y0: 572, gap: 58 };
-  const TESTBOSS_Y = { y0: 350, gap: 100 };   // 「測試 BOSS」頁的兩個 BOSS 選項
+  const TESTBOSS_Y = { y0: 320, gap: 90 };    // 「測試 BOSS」頁的三個 BOSS 選項
+  const TESTBOSS_KINDS = ['gangster', 'kiryu', 'asura'];
   const CHEAT_CODE = ['O', 'P', 'E', 'N'];    // 隱藏指令：在主選單依序按下 O P E N（跟輸入法 / 大小寫無關，讀的是實體鍵盤按鍵；刻意避開 W/A/S/D，不會跟選單上下移動衝突）
 
   // 頁面（操作說明 / 設定 / 排行榜 / 了解歷史）的版面
@@ -208,12 +209,12 @@
     testBossY(i) { return TESTBOSS_Y.y0 + i * TESTBOSS_Y.gap; }
     chooseTestBoss(i) {
       BM.Audio.sfx('select');
-      BM.Game.setScene('play', { testBoss: i === 0 ? 'gangster' : 'kiryu' });
+      BM.Game.setScene('play', { testBoss: TESTBOSS_KINDS[i] });
     }
     updateTestBoss(P) {
-      if (P.up) { this.testIdx = (this.testIdx + 1) % 2; BM.Audio.sfx('move'); }      // 只有 2 個選項，上下都是切換
-      if (P.down) { this.testIdx = (this.testIdx + 1) % 2; BM.Audio.sfx('move'); }
-      for (let i = 0; i < 2; i++) {
+      if (P.up) { this.testIdx = (this.testIdx + TESTBOSS_KINDS.length - 1) % TESTBOSS_KINDS.length; BM.Audio.sfx('move'); }
+      if (P.down) { this.testIdx = (this.testIdx + 1) % TESTBOSS_KINDS.length; BM.Audio.sfx('move'); }
+      for (let i = 0; i < TESTBOSS_KINDS.length; i++) {
         const hit = p => p && Math.abs(p.x - W / 2) < BTN.w / 2 && Math.abs(p.y - this.testBossY(i)) < 27;
         if (I.moved && hit(I.pointer) && this.testIdx !== i) { this.testIdx = i; BM.Audio.sfx('move'); }
         if (I.click && hit(I.click)) { this.chooseTestBoss(i); return; }
@@ -402,8 +403,8 @@
     drawTestBoss(ctx, t) {
       this.panel(ctx, L('test.title'));
       D.text(ctx, L('test.hint'), W / 2, 190, { size: 15, align: 'center', color: '#9fb0e8', maxW: 420 });
-      const names = [L('boss.name'), L('boss2.name')];
-      for (let i = 0; i < 2; i++) D.button(ctx, names[i], W / 2, this.testBossY(i), BTN.w, 54, i === this.testIdx, t);
+      const names = [L('boss.name'), L('boss2.name'), L('boss3.name')];
+      for (let i = 0; i < names.length; i++) D.button(ctx, names[i], W / 2, this.testBossY(i), BTN.w, 54, i === this.testIdx, t);
       this.footer(ctx, t, 'test.keys', 'test.tap');
     }
 

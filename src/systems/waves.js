@@ -2,21 +2,30 @@
 (function (BM) {
   const C = BM.CONFIG, F = C.FORMATION, M = BM.M;
 
+  const ROUND_LEN = C.BOSS.EVERY * 3;             // 一輪 = 3 隻 BOSS 依序登場 = 15 波
+  const ROUND_NORMAL = ROUND_LEN - 3;             // 一輪裡的一般波數（15 波扣掉 3 場 BOSS 戰 = 12）
+
   BM.Waves = {
-    // 難度曲線（波數越高：同時出擊數 ↑、間隔 ↓、速度 ↑、子彈速度 ↑，皆有上限）
+    // 難度曲線以「輪」為單位（同時出擊數 ↑、間隔 ↓、速度 ↑、子彈速度 ↑，皆有上限）：
+    // 輪內（pos 1~15）沿用原本的漸進曲線；輪次加成（rb）讓每過一輪基準線再往上墊一點，
+    // 不會像舊版只看連續波數，波數一高（約第 10~11 波）就整個封頂、之後永遠一樣難。
     params(wave) {
+      const pos = ((wave - 1) % ROUND_LEN) + 1;
+      const rb = Math.min(4, Math.ceil(wave / ROUND_LEN) - 1);        // 第 2 輪起每輪 +1 級，封頂 +4（第 5 輪之後不再加）
       return {
         wave,
-        maxAttackers: Math.min(2 + Math.floor((wave - 1) * 0.75), 6),
-        interval: Math.max(0.65, 1.9 - 0.14 * (wave - 1)),
-        speedMul: Math.min(1.5, 1 + 0.06 * (wave - 1)),
-        bulletSpeed: Math.min(340, 220 + 12 * (wave - 1))
+        maxAttackers: Math.min(6 + rb, 2 + Math.floor((pos - 1) * 0.75) + rb),
+        interval: Math.max(0.65 - 0.04 * rb, 1.9 - 0.14 * (pos - 1)),
+        speedMul: Math.min(1.5 + 0.1 * rb, 1 + 0.06 * (pos - 1) + 0.1 * rb),
+        bulletSpeed: Math.min(340 + 20 * rb, 220 + 12 * (pos - 1) + 20 * rb)
       };
     },
 
-    // 第 n 個「一般波」的敵機數量與列數（n 從 1 開始，BOSS 波不計入）
+    // 第 n 個「一般波」的敵機數量與列數（n 從 1 開始，BOSS 波不計入；同樣以輪為單位漸進）
     plan(n) {
-      const count = Math.min(F.maxCount, F.startCount + F.perWave * (n - 1));
+      const pos = ((n - 1) % ROUND_NORMAL) + 1;
+      const rb = Math.min(4, Math.ceil(n / ROUND_NORMAL) - 1);        // 每輪 +5 隻，封頂 +20（第 5 輪之後不再加）
+      const count = Math.min(F.maxCount + rb * 5, F.startCount + F.perWave * (pos - 1) + rb * 5);
       return { count, rows: Math.ceil(count / F.cols) };
     },
 

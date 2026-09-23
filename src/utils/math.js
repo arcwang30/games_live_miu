@@ -17,6 +17,7 @@
     smoothstep(t) { t = M.clamp(t, 0, 1); return t * t * (3 - 2 * t); },
     easeInOutSine: t => -(Math.cos(Math.PI * t) - 1) / 2,
     easeOutCubic: t => 1 - Math.pow(1 - t, 3),
+    easeInCubic: t => t * t * t,
     shuffle(arr) {
       for (let i = arr.length - 1; i > 0; i--) {
         const j = Math.floor(Math.random() * (i + 1));

@@ -1,4 +1,4 @@
-// BOSS：兩種角色輪流出現（play-scene.js 依 BOSS 等級奇偶選擇），流程與階段規則共用：
+// BOSS：三種角色輪流出現（play-scene.js 依 BOSS 等級 % 3 選擇），流程與階段規則共用：
 //   流氓大老鼠（獨眼面罩 + 太空裝，kind='gangster'）
 //     狀態機：enter（登場）→ idle（待機）→ 依洗牌袋輪流抽 4 種攻擊 → idle …
 //       fan    傘狀便便彈：扇形散射便便，連發 3～4 輪，奇數輪錯開縫隙
@@ -11,10 +11,15 @@
 //       punch  百裂拳：欺近玩家後兩手連續揮拳（近戰，命中判定是以身體為圓心的圓形範圍）
 //       cone   三角錐攻擊：射出小刀，飛行一小段時間後在原地炸裂成一圈碎片四散
 //       shout  「極！」：口中喊出文字並向外擴散，玩家碰到範圍內會被緩速（不會扣命）
-// 血量 66% / 33% 進入第 2 / 3 階段（速度 ×1.12 / ×1.25，發數增加，兩種 BOSS 共用）。
-// 血量歸零 → dying：定格、一臉厭世（或被打趴）、碎面罩、嘆氣、講一句隨機抽的台詞，最後才爆炸 → dead。
+//   狠蘭達鼠（阿修羅四臂法師，kind='asura'）：最終 BOSS，每 3 隻才出現一次（比另外兩隻更強、更快），純法術系、沒有近戰
+//       blade   揮劍：雙重十字斬，兩輪扇形光刃交錯射出
+//       trident 三叉戟：三發一組的貫穿齊射，瞄準玩家
+//       bell    法鈴：以自己為圓心，一次齊發一整圈音波珠（跟桐生爹鼠的螺旋不同，是同時發射的滿圈）
+//       wheel   法輪：射出會迴旋轉彎的法輪，軌跡難預測
+// 血量 66% / 33% 進入第 2 / 3 階段（速度 ×1.12 / ×1.25，發數增加，三種 BOSS 共用）。
+// 血量歸零 → dying：定格、換一張表情（厭世 / 被打趴 / 暈眩），嘆氣、講一句隨機抽的台詞，最後才爆炸 → dead。
 (function (BM) {
-  const C = BM.CONFIG, B = C.BOSS, B2 = C.BOSS2, M = BM.M, D = BM.Draw, W = C.W, H = C.H, PI = Math.PI;
+  const C = BM.CONFIG, B = C.BOSS, B2 = C.BOSS2, B3 = C.BOSS3, M = BM.M, D = BM.Draw, W = C.W, H = C.H, PI = Math.PI;
 
   // ---- 死亡台詞：文字放在 i18n（流氓大老鼠 'boss.l.<id>'、桐生爹鼠 'boss2.l.<id>'，中日英各一份），這裡決定「什麼情況抽哪些」----
   // any 通用；day / dusk / night 依時段；lv1 / lv2 / lv3 依第幾隻 BOSS（lv3 = 第 3 隻起，台詞裡的 {n} 會換成第幾隻）；
@@ -32,9 +37,15 @@
     lv1: ['klv1a', 'klv1b'], lv2: ['klv2a', 'klv2b'], lv3: ['klv3a', 'klv3b'],
     flawless: ['kflaw1', 'kflaw2'], manyDeaths: ['kmany1', 'kmany2'], fast: ['kfast1'], slow: ['kslow1']
   };
+  // 狠蘭達鼠：最終 BOSS，神祕 / 超脫生死的語氣，呼應名字的諧音「很難打死」
+  const LINES3 = {
+    any: ['u01', 'u02', 'u03', 'u04', 'u05', 'u06', 'u07', 'u08', 'u09', 'u10', 'u11', 'u12'],
+    lv1: ['ulv1a', 'ulv1b'], lv2: ['ulv2a', 'ulv2b'], lv3: ['ulv3a', 'ulv3b'],
+    flawless: ['uflaw1', 'uflaw2'], manyDeaths: ['umany1', 'umany2'], fast: ['ufast1'], slow: ['uslow1']
+  };
   const SPECIFIC_WEIGHT = 4;             // 符合情境的台詞，被抽到的機會是通用台詞的 4 倍（一般情況下大約一半的時候會是「針對你這一場」的吐槽）
   const FAST_UNDER = 50, SLOW_OVER = 110; // 戰鬥秒數（含登場約 2 秒）：低於 / 高於這個算「很快 / 很久」
-  const recent = [], recent2 = [];       // 最近抽過的台詞（兩隻 BOSS 分開記，不會連續重複）
+  const recent = [], recent2 = [], recent3 = [];   // 最近抽過的台詞（三隻 BOSS 分開記，不會連續重複）
 
   // ctx = { phase: 'day'|'dusk'|'night', level, deaths, time }；table 省略 = 流氓大老鼠；回傳台詞 id
   function pickLine(ctx, table, recentList) {
@@ -56,14 +67,20 @@
 
   const KINDS = {                        // 每種 BOSS 的 4 招攻擊洗牌袋
     gangster: ['fan', 'cheese', 'charge', 'claw'],
-    kiryu: ['slash', 'punch', 'cone', 'shout']
+    kiryu: ['slash', 'punch', 'cone', 'shout'],
+    asura: ['blade', 'trident', 'bell', 'wheel']
   };
 
   class Boss {
+    // 難度曲線改成「輪」為單位（一輪 = 3 隻 BOSS 依序登場）：輪內用 posInRound 做小幅遞增（壓軸的狠蘭達鼠最強），
+    // 長期的難度成長主要交給 roundBonus（每過一輪 +1 級，封頂），這樣往後每一輪都會再更難一點，不會像舊版只看 level 連續遞增、
+    // 到第 2～3 輪（level 6～9）就整個封頂、之後永遠一樣難。
     constructor(level, kind) {
       this.level = level;
-      this.kind = kind === 'kiryu' ? 'kiryu' : 'gangster';
-      this.maxHp = Math.min(B.hpMax, B.hpBase + B.hpPerLevel * (level - 1));
+      this.kind = kind === 'kiryu' ? 'kiryu' : kind === 'asura' ? 'asura' : 'gangster';
+      const pos = this.posInRound, rb = this.roundBonus;
+      this.maxHp = Math.min(B.hpMax + rb * 60, B.hpBase + B.hpPerLevel * (pos - 1) + rb * 60);
+      if (this.kind === 'asura') this.maxHp = Math.min(560 + rb * 40, Math.round(this.maxHp * B3.hpMul));   // 最終 BOSS：血量在共用曲線上再加成，是三隻裡最硬的
       this.hp = this.maxHp;
       this.ghost = this.maxHp;          // 血條殘影
       this.x = W / 2; this.y = -180;
@@ -82,8 +99,8 @@
       this.tele = null;
       this.puffs = [];
       this.swayT = Math.random() * 6;
-      this.lm = Math.min(1.6, 1 + 0.1 * (level - 1));     // 動作速度倍率（隨 BOSS 等級）
-      this.bm = Math.min(1.5, 1 + 0.06 * (level - 1));    // 子彈速度倍率
+      this.lm = Math.min(1.9, 1 + 0.05 * (pos - 1) + 0.1 * rb);     // 動作速度倍率：輪內小幅遞增 + 輪次主要成長
+      this.bm = Math.min(1.7, 1 + 0.03 * (pos - 1) + 0.07 * rb);    // 子彈速度倍率：同上
       this.px = W / 2; this.py = 800;                      // 最近一次看到的玩家位置
       this.idleDur = 1;
     }
@@ -94,8 +111,14 @@
     get vulnerable() { return this.alive && this.state !== 'enter' && !this.guarding; }
     get lethal() { return this.alive && this.state !== 'enter'; }      // 身體碰到玩家會致命
     get barK() { return this.state === 'enter' ? Math.min(1, this.t / 2.2) : 1; }
-    get nameKey() { return this.kind === 'kiryu' ? 'boss2.name' : 'boss.name'; }
-    get spritePrefix() { return this.kind === 'kiryu' ? 'kiryu_' : 'boss_'; }
+    get nameKey() { return this.kind === 'kiryu' ? 'boss2.name' : this.kind === 'asura' ? 'boss3.name' : 'boss.name'; }
+    get spritePrefix() { return this.kind === 'kiryu' ? 'kiryu_' : this.kind === 'asura' ? 'asura_' : 'boss_'; }
+    // 難度曲線以「輪」為單位（一輪 = 3 隻 BOSS 依序登場，15 波）：
+    get posInRound() { return ((this.level - 1) % 3) + 1; }          // 這一輪裡第幾隻登場（1 流氓大老鼠／2 桐生爹鼠／3 狠蘭達鼠）
+    get round() { return Math.ceil(this.level / 3); }                 // 第幾輪（1 起算）
+    get roundBonus() { return Math.min(6, this.round - 1); }          // 血量／速度倍率的輪次加成，封頂（第 7 輪之後不再加）
+    // 狠蘭達鼠第幾次出場（0 = 第一次，第 15 波；1 = 第 30 波…最多疊 3 次）：彈幕量第一次刻意壓低，之後每次出場再漸進變難
+    get asuraTier() { return this.kind === 'asura' ? Math.min(3, this.round - 1) : 0; }
 
     // ------------------------------------------------ 受傷 / 死亡
     damage(n, w) {
@@ -113,7 +136,7 @@
       this.a = { ex: 0, puff: 0 };
       // 死亡台詞：依時段 / 第幾隻 / 這局表現隨機抽（兩隻 BOSS 各用自己的台詞庫）
       const ctx = { phase: BM.Background.phaseFor(w.wave), level: this.level, deaths: w.deaths || 0, time: this.time };
-      this.lineId = this.kind === 'kiryu' ? pickLine(ctx, LINES2, recent2) : pickLine(ctx, LINES, recent);
+      this.lineId = this.kind === 'kiryu' ? pickLine(ctx, LINES2, recent2) : this.kind === 'asura' ? pickLine(ctx, LINES3, recent3) : pickLine(ctx, LINES, recent);
       this.face = 'dead';
       this.guarding = false;
       w.onBossDying();
@@ -131,7 +154,7 @@
       this.t = 0;
       this.a = {};
       this.face = 'normal';
-      this.idleDur = B.idle / this.spd;
+      this.idleDur = (this.kind === 'asura' ? B3.idle : B.idle) / this.spd;   // 最終 BOSS 攻擊間隔比另外兩隻短，逼玩家不能放鬆
     }
 
     nextAttack(w) {
@@ -151,6 +174,10 @@
         case 'punch':  this.a = { stage: 'approach', t: 0, n: 0, total: 4 + this.phase * 2, timer: 0, jab: false, jabT: 0 }; break;               // 6/8/10 拳
         case 'cone':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: this.phase, pending: [] }; break;   // 1/2/3 把，原本 2/3/4 太密
         case 'shout':  this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 14 + this.phase * 4, ang: Math.random() * M.TAU }; w.sfx('shout'); break;  // 18/22/26 發，繞著 BOSS 轉出螺旋
+        case 'blade':   this.a = { stage: 'wind', t: 0, volley: 0, timer: 0, total: 2 + this.phase }; break;                              // 3/4/5 輪雙重十字斬（每輪的光刃數在 fireBlade() 依出場次數調整）
+        case 'trident': this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: 1 + this.phase + this.asuraTier }; break;             // 2/3/4 組（第一次出場刻意減量），之後每次出場再 +1 組（最多 +3）
+        case 'bell':    this.a = { stage: 'wind', t: 0, rung: 0, timer: 0, total: B3.bellRings + this.phase - 1 + this.asuraTier }; w.sfx('bellRing'); break;   // 2/3/4 圈（第一次出場刻意減量），之後每次出場再 +1 圈（最多 +3）
+        case 'wheel':   this.a = { stage: 'wind', t: 0, thrown: 0, timer: 0, total: this.phase + Math.min(2, this.asuraTier) }; break;    // 1/2/3 個法輪，之後每次出場再 +1（最多 +2，法輪本來就難閃不宜加太多）
       }
     }
 
@@ -183,6 +210,10 @@
         case 'punch': this.updatePunch(dt, w); break;
         case 'cone': this.updateCone(dt, w); break;
         case 'shout': this.updateShout(dt, w); break;
+        case 'blade': this.updateBlade(dt, w); break;
+        case 'trident': this.updateTrident(dt, w); break;
+        case 'bell': this.updateBell(dt, w); break;
+        case 'wheel': this.updateWheel(dt, w); break;
         case 'dying': this.updateDying(dt, w); break;
       }
 
@@ -497,6 +528,110 @@
       } else if (a.t >= 0.4 / this.spd) this.toIdle();
     }
 
+    // ---- 狠蘭達鼠：揮劍（雙重十字斬，兩輪扇形光刃交錯瞄準玩家射出，形成一個 X）----
+    updateBlade(dt, w) {
+      const a = this.a; a.t += dt;
+      this.hover(dt, 0.35);
+      if (!w.player.alive) { this.toIdle(); return; }
+      if (a.stage === 'wind') {
+        this.sx = Math.sin(this.time * 55) * 1.6;
+        this.tele = { type: 'blade', k: Math.min(1, a.t / (0.4 / this.spd)) };
+        if (a.t >= 0.4 / this.spd) { a.stage = 'fire'; a.t = 0; a.timer = 0; this.tele = null; }
+      } else if (a.stage === 'fire') {
+        a.timer -= dt;
+        if (a.timer <= 0 && a.volley < a.total) {
+          this.fireBlade(w, a.volley);
+          a.volley++;
+          a.timer = 0.32 / this.spd;
+          if (a.volley >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.4 / this.spd) this.toIdle();
+    }
+    fireBlade(w, volley) {
+      const count = (this.phase >= 2 ? 8 : 6) + this.asuraTier, span = B3.bladeSpan;   // 第一次出場刻意減量（原本 8/11），之後每次出場再 +1 發（最多 +3）
+      const base = M.clamp(Math.atan2(this.py - this.y, this.px - this.x), PI / 2 - 0.7, PI / 2 + 0.7);
+      const center = base + (volley % 2 === 0 ? -0.32 : 0.32);         // 兩輪分別往左右偏，疊起來形成十字交錯
+      const step = span / (count - 1), sp = B3.bladeSpeed * this.bm;
+      for (let i = 0; i < count; i++) w.fireBullet(this.x, this.y + 50, center - span / 2 + i * step, sp, 'blade');
+      w.sfx('knife'); w.addShake(0.1);
+    }
+
+    // ---- 狠蘭達鼠：三叉戟（三發一組的貫穿齊射，瞄準玩家，微幅預判橫移）----
+    updateTrident(dt, w) {
+      const a = this.a, p = w.player; a.t += dt;
+      this.hover(dt, 0.35);
+      if (!p.alive) { this.toIdle(); return; }
+      if (a.stage === 'wind') {
+        this.tele = { type: 'trident', k: Math.min(1, a.t / (0.35 / this.spd)) };
+        if (a.t >= 0.35 / this.spd) { a.stage = 'fire'; a.t = 0; a.timer = 0; this.tele = null; }
+      } else if (a.stage === 'fire') {
+        a.timer -= dt;
+        if (a.timer <= 0 && a.thrown < a.total) {
+          this.fireTrident(w);
+          a.thrown++;
+          a.timer = B3.tridentGap / this.spd;
+          if (a.thrown >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.3 / this.spd) this.toIdle();
+    }
+    fireTrident(w) {
+      const p = w.player, hy = this.y + 55;
+      const lead = M.clamp(p.x + M.clamp(p.vx, -C.PLAYER.speed, C.PLAYER.speed) * 0.22, 20, W - 20);
+      const ang = Math.atan2(p.y - hy, lead - this.x), sp = B3.tridentSpeed * this.bm;
+      for (const off of [-0.09, 0, 0.09]) w.fireBullet(this.x, hy, ang + off, sp, 'trident');
+      w.sfx('cheese');
+    }
+
+    // ---- 狠蘭達鼠：法鈴（以自己為圓心，一次齊發一整圈音波珠；跟「極！」的展開螺旋不同，是同時發射的滿圈）----
+    updateBell(dt, w) {
+      const a = this.a; a.t += dt;
+      this.hover(dt, 0.25);
+      if (!w.player.alive) { this.toIdle(); return; }
+      if (a.stage === 'wind') {
+        this.tele = { type: 'bell', k: Math.min(1, a.t / (0.5 / this.spd)) };
+        if (a.t >= 0.5 / this.spd) { a.stage = 'ring'; a.t = 0; a.timer = 0; this.tele = null; }
+      } else if (a.stage === 'ring') {
+        a.timer -= dt;
+        if (a.timer <= 0 && a.rung < a.total) {
+          this.fireBell(w, a.rung);
+          a.rung++;
+          a.timer = B3.bellRingGap / this.spd;
+          if (a.rung >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.35 / this.spd) this.toIdle();
+    }
+    fireBell(w, ring) {
+      const n = 14, offset = ring * 0.22, sp = B3.bellSpeed * this.bm, my = this.y + 30;
+      for (let i = 0; i < n; i++) w.fireBullet(this.x, my, offset + i / n * M.TAU, sp, 'ward');
+      w.sfx('bellRing'); w.addShake(0.15);
+    }
+
+    // ---- 狠蘭達鼠：法輪（射出會迴旋轉彎的法輪，軌跡難預測；EnemyBullet 的 turn 欄位讓它邊飛邊轉方向）----
+    updateWheel(dt, w) {
+      const a = this.a, p = w.player; a.t += dt;
+      this.hover(dt, 0.35);
+      if (!p.alive) { this.toIdle(); return; }
+      if (a.stage === 'wind') {
+        this.tele = { type: 'wheel', k: Math.min(1, a.t / (0.4 / this.spd)) };
+        if (a.t >= 0.4 / this.spd) { a.stage = 'fire'; a.t = 0; a.timer = 0; this.tele = null; }
+      } else if (a.stage === 'fire') {
+        a.timer -= dt;
+        if (a.timer <= 0 && a.thrown < a.total) {
+          this.fireWheel(w, a.thrown, a.total);
+          a.thrown++;
+          a.timer = 0.35 / this.spd;
+          if (a.thrown >= a.total) { a.stage = 'end'; a.t = 0; }
+        }
+      } else if (a.t >= 0.4 / this.spd) this.toIdle();
+    }
+    fireWheel(w, idx, total) {
+      const p = w.player, ox = (idx - (total - 1) / 2) * 44;
+      const ang = Math.atan2(p.y - this.y, (p.x + ox) - this.x);
+      const b = w.fireBullet(this.x + ox, this.y + 40, ang, B3.wheelSpeed * this.bm, 'wheel');
+      if (b) b.turn = (idx % 2 === 0 ? 1 : -1) * B3.wheelTurn * this.bm;   // 交替左右迴旋，飛行軌跡會彎
+      w.sfx('lock');
+    }
+
     // ---- 厭世死亡演出 ----
     updateDying(dt, w) {
       const a = this.a;
@@ -533,17 +668,21 @@
       ctx.save();
       ctx.translate(this.x + this.sx, this.y);
       ctx.rotate(this.rot);
-      if (this.alive) {                                            // 噴射火焰
-        const rush = this.state === 'charge' && this.a.stage === 'rush' ? 40 : 0;
-        for (const s of [-1, 1]) {                                 // 靴底噴射
-          const fl = 26 + rush + Math.sin(t * 50 + s) * 6;
-          const g = ctx.createLinearGradient(0, 102, 0, 102 + fl);
-          g.addColorStop(0, '#fff6b0'); g.addColorStop(0.5, '#ffa040'); g.addColorStop(1, 'rgba(255,80,60,0)');
-          ctx.fillStyle = g;
-          ctx.beginPath(); ctx.moveTo(s * 24 - 10, 102); ctx.lineTo(s * 24, 102 + fl); ctx.lineTo(s * 24 + 10, 102); ctx.closePath(); ctx.fill();
+      if (this.alive) {
+        if (this.kind === 'asura') this.drawAura(ctx, t);          // 狠蘭達鼠：赤腳懸浮，腳下是發光法陣，不是噴射火焰
+        else {                                                      // 噴射火焰
+          const rush = this.state === 'charge' && this.a.stage === 'rush' ? 40 : 0;
+          for (const s of [-1, 1]) {                                 // 靴底噴射
+            const fl = 26 + rush + Math.sin(t * 50 + s) * 6;
+            const g = ctx.createLinearGradient(0, 102, 0, 102 + fl);
+            g.addColorStop(0, '#fff6b0'); g.addColorStop(0.5, '#ffa040'); g.addColorStop(1, 'rgba(255,80,60,0)');
+            ctx.fillStyle = g;
+            ctx.beginPath(); ctx.moveTo(s * 24 - 10, 102); ctx.lineTo(s * 24, 102 + fl); ctx.lineTo(s * 24 + 10, 102); ctx.closePath(); ctx.fill();
+          }
         }
       }
-      const pulse = (this.state === 'fan' && this.a.stage === 'wind') || (this.state === 'slash' && (this.a.stage === 'wind' || this.a.stage === 'wind2')) ? 1 + Math.sin(t * 30) * 0.03 : 1;
+      const ASURA_WIND = ['blade', 'trident', 'bell', 'wheel'].includes(this.state) && this.a.stage === 'wind';
+      const pulse = (this.state === 'fan' && this.a.stage === 'wind') || (this.state === 'slash' && (this.a.stage === 'wind' || this.a.stage === 'wind2')) || ASURA_WIND ? 1 + Math.sin(t * 30) * 0.03 : 1;
       BM.Sprites.draw(ctx, this.spritePrefix + this.face + (this.flash > 0 ? '_hit' : ''), 0, 0, 0, pulse);
       ctx.restore();
 
@@ -622,6 +761,39 @@
         ctx.moveTo(tl.x - B2.punchHitR - 10, tl.y); ctx.lineTo(tl.x + B2.punchHitR + 10, tl.y);
         ctx.moveTo(tl.x, tl.y - B2.punchHitR - 10); ctx.lineTo(tl.x, tl.y + B2.punchHitR + 10);
         ctx.stroke();
+      } else if (tl.type === 'blade') {                    // 揮劍：雙重十字斬蓄力，兩道紫色光刃在身前交錯浮現
+        const cx = this.x, cy = this.y + 20, len = 26 + tl.k * 46;
+        ctx.globalAlpha = 0.35 + tl.k * 0.65;
+        ctx.lineCap = 'round';
+        ctx.shadowColor = 'rgba(190,120,255,0.9)'; ctx.shadowBlur = 12 * tl.k;
+        ctx.strokeStyle = '#e0c8ff'; ctx.lineWidth = 5;
+        ctx.beginPath(); ctx.moveTo(cx - len, cy - len * 0.55); ctx.lineTo(cx + len, cy + len * 0.55); ctx.stroke();
+        ctx.beginPath(); ctx.moveTo(cx - len, cy + len * 0.55); ctx.lineTo(cx + len, cy - len * 0.55); ctx.stroke();
+      } else if (tl.type === 'trident') {                  // 三叉戟：瞄準線 + 胸口蓄力光點
+        const hx = this.x, hy = this.y + 55;
+        ctx.strokeStyle = 'rgba(255,225,180,0.5)'; ctx.lineWidth = 2; ctx.setLineDash([6, 8]);
+        ctx.beginPath(); ctx.moveTo(hx, hy); ctx.lineTo(this.px, this.py); ctx.stroke();
+        ctx.setLineDash([]);
+        ctx.globalAlpha = tl.k;
+        ctx.fillStyle = '#ffe8c0';
+        ctx.shadowColor = 'rgba(255,200,120,0.9)'; ctx.shadowBlur = 14 * tl.k;
+        ctx.beginPath(); ctx.arc(hx, hy, 8 * tl.k, 0, M.TAU); ctx.fill();
+      } else if (tl.type === 'bell') {                     // 法鈴：以身體為中心逐漸擴大的音波環
+        const r = 40 + tl.k * 70;
+        ctx.globalAlpha = 0.5 * tl.k;
+        ctx.strokeStyle = 'rgba(232,178,61,0.9)'; ctx.lineWidth = 4;
+        ctx.beginPath(); ctx.arc(this.x, this.y + 20, r, 0, M.TAU); ctx.stroke();
+        ctx.strokeStyle = 'rgba(190,120,255,0.6)'; ctx.lineWidth = 2;
+        ctx.beginPath(); ctx.arc(this.x, this.y + 20, r * 0.6, 0, M.TAU); ctx.stroke();
+      } else if (tl.type === 'wheel') {                    // 法輪：手邊逐漸亮起的自轉光環
+        const hx = this.x - 92, hy = this.y - 6;
+        ctx.save(); ctx.translate(hx, hy); ctx.rotate(t * 10);
+        ctx.globalAlpha = tl.k;
+        ctx.shadowColor = 'rgba(232,178,61,0.9)'; ctx.shadowBlur = 10 * tl.k;
+        ctx.strokeStyle = '#e8b23d'; ctx.lineWidth = 3;
+        ctx.beginPath(); ctx.arc(0, 0, 12 * tl.k, 0, M.TAU); ctx.stroke();
+        for (let a = 0; a < 6; a++) { const an = a / 6 * M.TAU; ctx.beginPath(); ctx.moveTo(0, 0); ctx.lineTo(Math.cos(an) * 12 * tl.k, Math.sin(an) * 12 * tl.k); ctx.stroke(); }
+        ctx.restore();
       }
       ctx.restore();
     }
@@ -708,6 +880,22 @@
       ctx.restore();
     }
 
+    // 狠蘭達鼠：赤腳懸浮，腳下浮著一圈發光法陣（+旋轉的金色光點），取代另外兩隻 BOSS 的噴射靴火焰
+    drawAura(ctx, t) {
+      ctx.save();
+      ctx.globalAlpha = 0.55 + 0.2 * Math.sin(t * 4);
+      ctx.strokeStyle = 'rgba(190,120,255,0.85)'; ctx.lineWidth = 3;
+      ctx.beginPath(); ctx.ellipse(0, 104, 46, 13, 0, 0, M.TAU); ctx.stroke();
+      ctx.strokeStyle = 'rgba(232,178,61,0.7)'; ctx.lineWidth = 1.6;
+      ctx.beginPath(); ctx.ellipse(0, 104, 33, 9, 0, 0, M.TAU); ctx.stroke();
+      for (let i = 0; i < 6; i++) {
+        const ang = t * 1.4 + i / 6 * M.TAU;
+        ctx.fillStyle = 'rgba(232,178,61,0.9)';
+        ctx.beginPath(); ctx.arc(Math.cos(ang) * 46, 104 + Math.sin(ang) * 13, 3, 0, M.TAU); ctx.fill();
+      }
+      ctx.restore();
+    }
+
     // 反彈護盾
     drawGuard(ctx, t) {
       ctx.save();
@@ -739,7 +927,7 @@
     // 死亡時的對話框
     // 先出現「……」（停頓鋪陳），1.1 秒後換成這次抽到的台詞；台詞太長就自動斷成兩行（英文依單字、中日文逐字）
     drawBubble(ctx) {
-      const first = this.t < 1.1, prefix = this.kind === 'kiryu' ? 'boss2.' : 'boss.';
+      const first = this.t < 1.1, prefix = this.kind === 'kiryu' ? 'boss2.' : this.kind === 'asura' ? 'boss3.' : 'boss.';
       const text = first ? BM.I18n.t('boss.bubble1') : BM.I18n.t(this.lineId ? prefix + 'l.' + this.lineId : prefix + 'bubble2', { n: this.level });
       ctx.save(); ctx.font = '900 24px ' + D.CJK;
       const oneW = ctx.measureText(text).width;

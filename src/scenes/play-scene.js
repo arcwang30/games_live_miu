@@ -5,7 +5,7 @@
   const PAUSE_ITEMS = ['pause.resume', 'pause.menu'];
 
   class PlayScene {
-    // params.testBoss：'gangster' | 'kiryu'（從主選單「測試 BOSS」進來時直接跳到該 BOSS 的那一波，其餘流程照常）
+    // params.testBoss：'gangster' | 'kiryu' | 'asura'（從主選單「測試 BOSS」進來時直接跳到該 BOSS 的那一波，其餘流程照常）
     enter(params) {
       BM.Audio.playMusic(this.musicFor(1));
       BM.Particles.clear();
@@ -39,7 +39,10 @@
       this.pauseIdx = 0;
       this.banner = null;
       BM.Touch.setMode('play');       // 一進入遊戲就啟用觸控介面（不用等第一格更新）
-      if (params && params.testBoss) this.wave = (params.testBoss === 'kiryu' ? C.BOSS.EVERY * 2 : C.BOSS.EVERY) - 1;   // 測試 BOSS：startWave() 會 +1，直接跳到那一波
+      if (params && params.testBoss) {                     // 測試 BOSS：startWave() 會 +1，直接跳到那一波
+        const mul = params.testBoss === 'asura' ? 3 : params.testBoss === 'kiryu' ? 2 : 1;
+        this.wave = C.BOSS.EVERY * mul - 1;
+      }
       this.startWave();
     }
     exit() {
@@ -157,7 +160,8 @@
 
     startBossWave() {
       const level = this.wave / C.BOSS.EVERY;
-      const kind = level % 2 === 0 ? 'kiryu' : 'gangster';   // 兩隻 BOSS 交替出現：流氓大老鼠（第 5、15、25…波）／桐生爹鼠（第 10、20、30…波）
+      const m3 = level % 3;                                  // 三隻 BOSS 輪替：流氓大老鼠（第 5、20、35…波）／桐生爹鼠（第 10、25、40…波）／狠蘭達鼠 FINAL BOSS（第 15、30、45…波，每三輪的壓軸）
+      const kind = m3 === 1 ? 'gangster' : m3 === 2 ? 'kiryu' : 'asura';
       this.enemies = [];
       this.boss = new BM.Boss(level, kind);
       this.state = 'boss';
@@ -196,6 +200,80 @@
       this.addScore(bonus);
       BM.Popups.add(this.boss.x, this.boss.y, '+' + bonus, '#ffe27a');
       this.waveClear('BOSS DEFEATED!', L('banner.bossdown', { n: bonus }));
+    }
+
+    // ---- 狠蘭達鼠（FINAL BOSS）擊敗後的謝幕演出：起司星球爆炸消失又重新出現，我方飛機同步表演無限符號軌跡 ----
+    // 從 BOSS 完全消滅（boss.done）那一刻起算；演出結束後才呼叫 bossDefeated() 接回原本「加分／WAVE CLEAR／下一波」的流程
+    startFinale() {
+      this.state = 'finale';
+      this.finaleT = 0;
+      this.finaleBurstT = 0;
+      this.finaleGoneFx = false;
+      this.finaleBackFx = false;
+      this.pBullets.length = 0;
+      this.eBullets.length = 0;
+    }
+    updateFinale(dt) {
+      const F = C.FINALE, MO = C.MOON, p = this.player;
+      this.finaleT += dt;
+      const ft = this.finaleT;
+      const explodeEnd = F.explode, goneEnd = explodeEnd + F.gap, reappearEnd = goneEnd + F.reappear, flyInEnd = reappearEnd + F.flyIn;
+
+      // 星球：持續爆炸 → 淡出消失 → 空無一物 → 淡入重新出現
+      let moonAlpha;
+      if (ft < explodeEnd) {
+        moonAlpha = ft < explodeEnd - F.fadeOut ? 1 : 1 - (ft - (explodeEnd - F.fadeOut)) / F.fadeOut;
+        this.finaleBurstT -= dt;
+        if (this.finaleBurstT <= 0) {
+          this.finaleBurstT = F.burstGap;
+          BM.Particles.explode(MO.x + M.rand(-18, 18), MO.y + M.rand(-18, 18), M.pick(['#ffd166', '#ff8c42', '#ffffff', '#ffe27a']), 16);
+          this.addShake(0.22);
+          BM.Audio.sfx('boom');
+        }
+      } else if (ft < goneEnd) moonAlpha = 0;
+      else if (ft < reappearEnd) moonAlpha = (ft - goneEnd) / F.reappear;
+      else moonAlpha = 1;
+      BM.Background.setMoonAlpha(moonAlpha);
+
+      if (!this.finaleGoneFx && ft >= explodeEnd) {          // 星球完全爆炸消失那一刻：最後一次大爆炸
+        this.finaleGoneFx = true;
+        BM.Particles.explode(MO.x, MO.y, '#ffffff', 28);
+        BM.Particles.explode(MO.x, MO.y, '#ffd166', 20);
+        this.addShake(0.6);
+        BM.Audio.sfx('bossBoom');
+      }
+      if (!this.finaleBackFx && ft >= reappearEnd) {         // 星球完全重新出現那一刻
+        this.finaleBackFx = true;
+        BM.Audio.sfx('clear');
+      }
+
+      // 我方飛機：無限符號軌跡（跟星球爆炸同步）→ 衝出畫面上方 → 畫面外等待 → 從下方飛回起始位置
+      const prevX = p.x, prevY = p.y;
+      const cx = C.W / 2, cy = 480, ax = 130, ay = 78;
+      if (ft < explodeEnd) {
+        const th = (ft / explodeEnd) * M.TAU * F.loops;
+        p.x = cx + Math.sin(th) * ax;
+        p.y = cy + Math.sin(th) * Math.cos(th) * ay;
+      } else if (ft < explodeEnd + F.flyOff) {
+        const k = M.easeInCubic((ft - explodeEnd) / F.flyOff);
+        p.x = cx;
+        p.y = M.lerp(cy, -120, k);
+      } else if (ft < reappearEnd) {
+        p.x = C.PLAYER.startX; p.y = H + 200;                 // 畫面外待命，稍後從下方飛回
+      } else if (ft < flyInEnd) {
+        const k = M.easeOutCubic((ft - reappearEnd) / F.flyIn);
+        p.x = C.PLAYER.startX;
+        p.y = M.lerp(H + 200, C.PLAYER.startY, k);
+      } else {
+        p.x = C.PLAYER.startX; p.y = C.PLAYER.startY;
+      }
+      p.vx = (p.x - prevX) / dt;
+      p.updateFx(dt, true, M.clamp(-(p.y - prevY) / dt / C.PLAYER.speed, -1, 1));
+
+      if (ft >= flyInEnd) {
+        BM.Background.setMoonAlpha(null);
+        this.bossDefeated();
+      }
     }
 
     // ---- 玩家子彈打到 BOSS 護盾：依圓形法線物理反射，變成半透明小魚彈開 ----
@@ -257,8 +335,8 @@
 
     // ------------------------------------------------ 更新
     update(dt) {
-      // 觸控介面（虛擬圓盤與暫停按鈕）只在遊玩中啟用；暫停 / 遊戲結束時關閉
-      BM.Touch.setMode(this.paused || this.state === 'gameover' ? 'none' : 'play');
+      // 觸控介面（虛擬圓盤與暫停按鈕）只在遊玩中啟用；暫停 / 遊戲結束 / 謝幕演出時關閉
+      BM.Touch.setMode(this.paused || this.state === 'gameover' || this.state === 'finale' ? 'none' : 'play');
       if (this.paused) { this.updatePause(); return; }
       if (I.pressed.pause && this.state !== 'gameover') { this.pause(); return; }
 
@@ -267,6 +345,13 @@
       this.formation.update(dt);
       if (this.shake > 0) this.shake = Math.max(0, this.shake - dt);
       if (this.banner) { this.banner.t += dt; if (this.banner.t >= this.banner.dur) this.banner = null; }
+
+      if (this.state === 'finale') {          // 謝幕演出期間：飛機由演出腳本接管，其餘戰鬥邏輯全部跳過
+        this.updateFinale(dt);
+        BM.Particles.update(dt);
+        BM.Popups.update(dt);
+        return;
+      }
 
       const p = this.player;
       if (p.alive) p.update(dt, I, this);
@@ -313,7 +398,10 @@
       BM.Popups.update(dt);
 
       if (this.state === 'playing' && this.enemies.length === 0) this.waveClear();
-      else if (this.state === 'boss' && this.boss.done) this.bossDefeated();
+      else if (this.state === 'boss' && this.boss.done) {
+        if (this.boss.kind === 'asura') this.startFinale();     // FINAL BOSS：先播謝幕演出，演出結束後才加分／進入 WAVE CLEAR
+        else this.bossDefeated();
+      }
       else if (this.state === 'clear') { this.stateT -= dt; if (this.stateT <= 0) this.startWave(); }
       else if (this.state === 'gameover') { this.stateT -= dt; if (this.stateT <= 0) this.finish(); }
     }
@@ -449,8 +537,8 @@
       BM.Popups.draw(ctx);
       ctx.restore();
 
-      BM.HUD.draw(ctx, { score: this.score, hi: this.hi, lives: this.reserve, wave: this.wave, boss: !!this.boss });
-      if (this.boss && this.state !== 'clear') BM.HUD.drawBossBar(ctx, this.boss);
+      BM.HUD.draw(ctx, { score: this.score, hi: this.hi, lives: this.reserve, wave: this.wave, boss: !!this.boss && this.state !== 'finale' });
+      if (this.boss && this.state !== 'clear' && this.state !== 'finale') BM.HUD.drawBossBar(ctx, this.boss);
       BM.Touch.draw(ctx, this.time);          // 虛擬圓盤 + 暫停按鈕（僅觸控模式）
       this.drawBanner(ctx);
       if (this.state === 'gameover') this.drawGameOver(ctx);

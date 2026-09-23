@@ -120,7 +120,10 @@
       e.ai = {
         phase: 'windup', t: 0, life: 0, speed: 120, x0: e.x, y0: e.y,
         max: 285 * w.params.speedMul,
-        turn: Math.min(2.3, 1.5 + 0.07 * (w.wave - 1))       // 轉向速度有限 -> 可以橫移閃開
+        turn: (() => {                                        // 轉向速度有限 -> 可以橫移閃開；以「輪」為單位漸進（跟 waves.js 的難度曲線一致）
+          const RL = C.BOSS.EVERY * 3, pos = ((w.wave - 1) % RL) + 1, rb = Math.min(4, Math.ceil(w.wave / RL) - 1);
+          return Math.min(2.3 + 0.15 * rb, 1.5 + 0.07 * (pos - 1) + 0.15 * rb);
+        })()
       };
       e.warn = true;
       e.state = 'attack';

@@ -3,7 +3,7 @@
   BM.CONFIG = {
     // 版本號：每次發佈都要和 index.html 裡的 BM_INDEX_VERSION（以及 <script src="...?v=">）一起更新。
     // 兩邊不一致代表有檔案沒更新到，遊戲會直接在畫面上提醒。
-    VERSION: '2026.09.24a',
+    VERSION: '2026.09.24d',
 
     W: 540,            // 邏輯解析度（9:16 直式）
     H: 960,
@@ -96,6 +96,28 @@
       // 「極！」：以 BOSS 為中心朝外螺旋狀連續射出多發「極」字子彈（玩家要真的碰到才會緩速，不是範圍攻擊）：
       // 蓄力／子彈飛行速度／緩速秒數／每發之間轉的角度／每發之間的間隔秒數
       shout: { charge: 0.5, speed: 440, slowTime: 2.4, spiralStep: 0.5, spiralGap: 0.055 }
+    },
+
+    // BOSS「狠蘭達鼠」：阿修羅造型的四臂法師，是全遊戲最強的 FINAL BOSS，跟另外兩隻交替出現（EVERY 的第 3 輪，也就是第 15、30、45…波）。
+    // 身體大小、待機高度沿用上面 BOSS 的 radius / homeY（純法術系、沒有近戰，所以不需要 claw/punch 那些數值）；
+    // 血量在共用等級曲線上再乘 hpMul 加成，attack 節奏比另外兩隻快（idle 更短），4 招分別對應四隻手的法器：劍（十字斬）／三叉戟（貫穿齊射）／法鈴（滿圈音波）／法輪（迴旋弧線）。
+    BOSS3: {
+      hpMul: 1.25,             // 血量再乘 1.25 倍（在 boss.js 另外 clamp 到上限 560），全場最硬
+      idle: 0.95,              // 攻擊間隔比另外兩隻（1.3）短，出招更密集
+      bladeSpan: 1.1,          // 十字斬：每輪扇形涵蓋的弧度
+      bladeSpeed: 480,         // 光刃飛行速度
+      tridentSpeed: 560, tridentGap: 0.32,     // 三叉戟：貫穿彈速度／每組三連發的間隔
+      bellRings: 2, bellSpeed: 300, bellRingGap: 0.5,   // 法鈴：基礎圈數（依 phase／出場次數再加，見 boss.js）／音波珠速度／每圈間隔
+      wheelSpeed: 340, wheelTurn: 1.6          // 法輪：飛行速度／轉彎角速度（rad/s，決定迴旋弧線的彎度）
+    },
+
+    // 狠蘭達鼠擊敗後的謝幕演出：起司星球爆炸消失又重新出現，我方飛機同步表演無限符號軌跡（見 play-scene.js 的 startFinale/updateFinale）
+    FINALE: {
+      explode: 4.0, fadeOut: 0.4, burstGap: 0.35,   // 星球持續爆炸幾秒（最後 fadeOut 秒淡出消失）／爆炸特效間隔
+      gap: 3.0,                                      // 星球消失後，維持空無一物幾秒
+      reappear: 2.0,                                 // 星球從無到完全出現的淡入時間
+      flyOff: 0.9, flyIn: 1.1,                        // 我方飛機衝出畫面上方／從下方飛回起始位置各需要的時間
+      loops: 2.5                                      // 無限符號軌跡演出繞幾圈（0.5 的倍數，結尾才會剛好繞回畫面中心）
     }
   };
 })(window.BM = window.BM || {});
